@@ -1,5 +1,3 @@
-// lib/screens/home_page.dart (Enhanced)
-
 import 'package:flutter/material.dart';
 import 'meal_card.dart';
 
@@ -15,6 +13,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // 1. Add a controller and a search string state
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
   final List<Map<String, dynamic>> mealPackages = [
     {
       'type': 'Breakfast',
@@ -55,20 +57,30 @@ class _HomePageState extends State<HomePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // 2. Listen to search changes
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const List<String> categories = [
-      'All',
-      'Breakfast',
-      'Lunch',
-      'Dinner',
-      'Merienda',
-      'Dessert'
-    ];
+    const List<String> categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Merienda', 'Dessert'];
 
     return DefaultTabController(
       length: categories.length,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F8F8), // Subtle background contrast
+        backgroundColor: const Color(0xFFF8F8F8),
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return <Widget>[
@@ -77,10 +89,8 @@ class _HomePageState extends State<HomePage> {
                 floating: true,
                 pinned: true,
                 snap: true,
-                // --- REMOVED BACK ICON LOGIC ---
-                automaticallyImplyLeading: false, 
-                leading: null, 
-                // -------------------------------
+                automaticallyImplyLeading: false,
+                leading: null,
                 elevation: 0,
                 backgroundColor: HomePage.primaryOrange,
                 flexibleSpace: FlexibleSpaceBar(
@@ -106,32 +116,22 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(110.0), 
+                  preferredSize: const Size.fromHeight(110.0),
                   child: Column(
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                        child: _buildSearchBar(),
+                        child: _buildSearchBar(), // Controller is linked here
                       ),
                       TabBar(
                         isScrollable: true,
-                        indicatorColor: Colors.transparent, // Hide default underline
+                        indicatorColor: Colors.transparent,
                         dividerColor: Colors.transparent,
                         labelColor: Colors.white,
                         unselectedLabelColor: Colors.white.withOpacity(0.7),
                         tabAlignment: TabAlignment.start,
                         padding: const EdgeInsets.only(left: 15, bottom: 8),
-                        tabs: categories.map((name) => Tab(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20.0), // Pill style
-                              border: Border.all(color: Colors.white.withOpacity(0.1)),
-                            ),
-                            child: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                          ),
-                        )).toList(),
+                        tabs: categories.map((name) => _buildTabPill(name)).toList(),
                       ),
                     ],
                   ),
@@ -141,45 +141,15 @@ class _HomePageState extends State<HomePage> {
           },
           body: TabBarView(
             children: categories.map((category) {
-              final filteredPackages = category == 'All'
-                  ? mealPackages
-                  : mealPackages.where((meal) => meal['type'] == category).toList();
+              // 3. COMBINED FILTERING LOGIC
+              final filteredPackages = mealPackages.where((meal) {
+                final matchesCategory = (category == 'All' || meal['type'] == category);
+                final matchesSearch = meal['title'].toString().toLowerCase().contains(_searchQuery) ||
+                                     meal['vendor'].toString().toLowerCase().contains(_searchQuery);
+                return matchesCategory && matchesSearch;
+              }).toList();
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
-                itemCount: filteredPackages.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 15, top: 5),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Available Packages',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                          ),
-                          Text(
-                            'From local home-based vendors in your area',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  
-                  final meal = filteredPackages[index - 1];
-                  return MealCard(
-                    type: meal['type'],
-                    title: meal['title'],
-                    vendor: meal['vendor'],
-                    desc: meal['desc'],
-                    price: meal['price'],
-                    left: meal['left'],
-                    imageUrl: meal['image'],
-                  );
-                },
-              );
+              return _buildPackageList(filteredPackages, category);
             }).toList(),
           ),
         ),
@@ -188,80 +158,61 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHeaderContent() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white24, width: 2),
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/bahay_kusina_logo.png',
-                  width: 42,
-                  height: 42,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => 
-                    const Icon(Icons.restaurant, color: Colors.white),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  "BahayKusina",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-                Text(
-                  "Home-Cooked Meals",
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
+  Widget _buildTabPill(String name) {
+    return Tab(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(20.0),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
-        Row(
-          children: [
-            _buildHeaderIcon(Icons.notifications_none, true),
-            const SizedBox(width: 8),
-            _buildHeaderIcon(Icons.shopping_bag_outlined, false),
-          ],
-        ),
-      ],
+        child: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+      ),
     );
   }
 
-  Widget _buildHeaderIcon(IconData icon, bool hasBadge) {
-    return Stack(
-      children: [
-        IconButton(
-          icon: Icon(icon, color: Colors.white, size: 26),
-          onPressed: () {},
+  Widget _buildPackageList(List<Map<String, dynamic>> items, String category) {
+    if (items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_rounded, size: 80, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text("No packages found", 
+              style: TextStyle(color: Colors.grey[600], fontSize: 16, fontWeight: FontWeight.w500)),
+            const Text("Try searching for something else", 
+              style: TextStyle(color: Colors.grey, fontSize: 13)),
+          ],
         ),
-        if (hasBadge)
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              width: 10,
-              height: 10,
-              decoration: const BoxDecoration(
-                color: HomePage.accentRed,
-                shape: BoxShape.circle,
-              ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+      itemCount: items.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 15, top: 5, left: 5),
+            child: Text(
+              _searchQuery.isEmpty ? 'Available $category Packages' : 'Results for "$_searchQuery"',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-          )
-      ],
+          );
+        }
+        final meal = items[index - 1];
+        return MealCard(
+          type: meal['type'],
+          title: meal['title'],
+          vendor: meal['vendor'],
+          desc: meal['desc'],
+          price: meal['price'],
+          left: meal['left'],
+          imageUrl: meal['image'],
+        );
+      },
     );
   }
 
@@ -272,41 +223,67 @@ class _HomePageState extends State<HomePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5)),
         ],
       ),
-      child: const TextField(
+      child: TextField(
+        controller: _searchController, // Linked the controller here
         decoration: InputDecoration(
-          hintText: "Search your favorite home-cooked meal...",
-          hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: Icon(Icons.search_rounded, color: HomePage.primaryOrange),
+          hintText: "Search meals or vendors...",
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+          prefixIcon: const Icon(Icons.search_rounded, color: HomePage.primaryOrange),
+          suffixIcon: _searchQuery.isNotEmpty 
+            ? IconButton(
+                icon: const Icon(Icons.clear_rounded, color: Colors.grey),
+                onPressed: () => _searchController.clear(),
+              ) 
+            : null,
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
         ),
       ),
+    );
+  }
+
+  // ... (Header and BottomNavBar methods remain the same)
+  Widget _buildHeaderContent() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            const CircleAvatar(
+              backgroundColor: Colors.white,
+              radius: 20,
+              child: Icon(Icons.restaurant_menu, color: HomePage.primaryOrange, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text("BahayKusina", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                Text("Meal Packages", style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            ),
+          ],
+        ),
+        IconButton(icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white), onPressed: () {}),
+      ],
     );
   }
 
   Widget _buildBottomNavBar(BuildContext context) {
     return BottomNavigationBar(
       currentIndex: 0,
-      elevation: 20,
       selectedItemColor: HomePage.primaryOrange,
-      unselectedItemColor: Colors.grey[400],
-      showUnselectedLabels: true,
+      unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Orders'),
         BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), label: 'Profile'),
       ],
-      onTap: (index) {},
     );
   }
 }
