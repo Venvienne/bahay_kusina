@@ -93,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 220,
+      height: 180,
       decoration: const BoxDecoration(
         color: HomePage.primaryOrange,
         borderRadius: BorderRadius.only(
