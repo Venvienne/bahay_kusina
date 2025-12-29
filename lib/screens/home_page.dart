@@ -73,7 +73,6 @@ class _HomePageState extends State<HomePage> {
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return <Widget>[
               SliverAppBar(
-                // Use a larger height to accommodate content above the search bar
                 expandedHeight: 200.0, 
                 floating: true,
                 pinned: true,
@@ -81,10 +80,6 @@ class _HomePageState extends State<HomePage> {
                 backgroundColor: HomePage.primaryOrange,
                 flexibleSpace: FlexibleSpaceBar(
                   centerTitle: false,
-                  // --- FIX 2: Removed titlePadding and title widget for custom header placement ---
-                  // title: _buildHeaderContent(), 
-                  // titlePadding: const EdgeInsets.only(left: 20, bottom: 50, right: 20),
-                  
                   background: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -158,14 +153,14 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: Colors.grey.shade700),
+                            color: const Color.fromARGB(255, 0, 0, 0)),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 10, bottom: 10),
                       child: Text(
                         'From local home-based vendors',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                        style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0), fontSize: 13),
                       ),
                     ),
                     Expanded(
@@ -222,7 +217,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -310,7 +304,7 @@ class _HomePageState extends State<HomePage> {
     return BottomNavigationBar(
       currentIndex: 0,
       selectedItemColor: HomePage.primaryOrange,
-      unselectedItemColor: Colors.grey,
+      unselectedItemColor: const Color.fromARGB(255, 0, 0, 0),
       showUnselectedLabels: true,
       backgroundColor: Colors.white,
       items: const [
