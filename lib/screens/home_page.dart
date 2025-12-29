@@ -201,13 +201,27 @@ class _HomePageState extends State<HomePage> {
 
   // --- No changes needed here, as content is moved and positioned in SliverAppBar's background ---
   Widget _buildHeaderContent() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dynamicLogoSize = screenWidth * 0.18;
+    final dynamicPadding = dynamicLogoSize * 0.15;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.restaurant_menu, color: Colors.white, size: 24),
+            Container(
+              padding: EdgeInsets.all(dynamicPadding),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/bahay_kusina_logo.png',
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
