@@ -1,4 +1,4 @@
-// lib/screens/home_page.dart (Updated)
+// lib/screens/home_page.dart (Enhanced)
 
 import 'package:flutter/material.dart';
 import 'meal_card.dart';
@@ -15,7 +15,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // ... mealPackages list remains the same ...
   final List<Map<String, dynamic>> mealPackages = [
     {
       'type': 'Breakfast',
@@ -69,63 +68,70 @@ class _HomePageState extends State<HomePage> {
     return DefaultTabController(
       length: categories.length,
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8F8F8), // Subtle background contrast
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return <Widget>[
               SliverAppBar(
-                expandedHeight: 200.0, 
+                expandedHeight: 200.0,
                 floating: true,
                 pinned: true,
                 snap: true,
+                // --- REMOVED BACK ICON LOGIC ---
+                automaticallyImplyLeading: false, 
+                leading: null, 
+                // -------------------------------
+                elevation: 0,
                 backgroundColor: HomePage.primaryOrange,
                 flexibleSpace: FlexibleSpaceBar(
-                  centerTitle: false,
+                  collapseMode: CollapseMode.pin,
                   background: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [HomePage.primaryOrange, HomePage.secondaryOrange],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
                     ),
-                    // --- FIX 3: Placing custom header content in the background Stack ---
                     child: Stack(
                       children: [
                         Positioned(
-                          top: MediaQuery.of(context).padding.top + 5,
-                          left: 0,
-                          right: 0,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                            child: _buildHeaderContent(),
-                          ),
+                          top: MediaQuery.of(context).padding.top + 10,
+                          left: 20,
+                          right: 20,
+                          child: _buildHeaderContent(),
                         ),
                       ],
                     ),
-                    // -----------------------------------------------------------------------------
                   ),
                 ),
                 bottom: PreferredSize(
-                  // Use a preferred size that exactly fits the search bar and TabBar
-                  preferredSize: const Size.fromHeight(100.0), 
+                  preferredSize: const Size.fromHeight(110.0), 
                   child: Column(
                     children: [
-                      // --- FIX 1: Increased vertical padding for search bar visibility ---
                       Padding(
-                        padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 10.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
                         child: _buildSearchBar(),
                       ),
-                      // --------------------------------------------------------------------
                       TabBar(
                         isScrollable: true,
-                        indicatorSize: TabBarIndicatorSize.label,
-                        indicatorWeight: 3.0,
-                        indicatorColor: Colors.white,
+                        indicatorColor: Colors.transparent, // Hide default underline
+                        dividerColor: Colors.transparent,
                         labelColor: Colors.white,
-                        unselectedLabelColor: Colors.white70,
-                        tabs: categories
-                            .map((name) => Tab(text: name))
-                            .toList(),
+                        unselectedLabelColor: Colors.white.withOpacity(0.7),
+                        tabAlignment: TabAlignment.start,
+                        padding: const EdgeInsets.only(left: 15, bottom: 8),
+                        tabs: categories.map((name) => Tab(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20.0), // Pill style
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                            ),
+                            child: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                          ),
+                        )).toList(),
                       ),
                     ],
                   ),
@@ -137,54 +143,42 @@ class _HomePageState extends State<HomePage> {
             children: categories.map((category) {
               final filteredPackages = category == 'All'
                   ? mealPackages
-                  : mealPackages
-                      .where((meal) => meal['type'] == category)
-                      .toList();
+                  : mealPackages.where((meal) => meal['type'] == category).toList();
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 15.0, left: 10, bottom: 5),
-                      child: Text(
-                        'Available Packages',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: const Color.fromARGB(255, 0, 0, 0)),
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+                itemCount: filteredPackages.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 15, top: 5),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Available Packages',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                          Text(
+                            'From local home-based vendors in your area',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          ),
+                        ],
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 10, bottom: 10),
-                      child: Text(
-                        'From local home-based vendors',
-                        style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0), fontSize: 13),
-                      ),
-                    ),
-                    Expanded(
-                      child: filteredPackages.isEmpty
-                          ? Center(child: Text('No $category packages available.'))
-                          : ListView.builder(
-                              padding: EdgeInsets.zero,
-                              itemCount: filteredPackages.length,
-                              itemBuilder: (context, index) {
-                                final meal = filteredPackages[index];
-                                return MealCard(
-                                  type: meal['type'],
-                                  title: meal['title'],
-                                  vendor: meal['vendor'],
-                                  desc: meal['desc'],
-                                  price: meal['price'],
-                                  left: meal['left'],
-                                  imageUrl: meal['image'],
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
+                    );
+                  }
+                  
+                  final meal = filteredPackages[index - 1];
+                  return MealCard(
+                    type: meal['type'],
+                    title: meal['title'],
+                    vendor: meal['vendor'],
+                    desc: meal['desc'],
+                    price: meal['price'],
+                    left: meal['left'],
+                    imageUrl: meal['image'],
+                  );
+                },
               );
             }).toList(),
           ),
@@ -194,43 +188,42 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- No changes needed here, as content is moved and positioned in SliverAppBar's background ---
   Widget _buildHeaderContent() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final dynamicLogoSize = screenWidth * 0.18;
-    final dynamicPadding = dynamicLogoSize * 0.15;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(dynamicPadding),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 2),
+              ),
               child: ClipOval(
                 child: Image.asset(
                   'assets/images/bahay_kusina_logo.png',
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.contain,
+                  width: 42,
+                  height: 42,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => 
+                    const Icon(Icons.restaurant, color: Colors.white),
                 ),
               ),
             ),
+            const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: const [
                 Text(
                   "BahayKusina",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 20,
                   ),
                 ),
                 Text(
-                  "Meal Packages",
+                  "Home-Cooked Meals",
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
@@ -239,62 +232,60 @@ class _HomePageState extends State<HomePage> {
         ),
         Row(
           children: [
-            Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications_none,
-                      color: Colors.white),
-                  onPressed: () {},
-                ),
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: HomePage.accentRed,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 12,
-                      minHeight: 12,
-                    ),
-                  ),
-                )
-              ],
-            ),
-            IconButton(
-              icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
-              onPressed: () {},
-            ),
+            _buildHeaderIcon(Icons.notifications_none, true),
+            const SizedBox(width: 8),
+            _buildHeaderIcon(Icons.shopping_bag_outlined, false),
           ],
         ),
       ],
     );
   }
-  // --------------------------------------------------------------------------------------------------
-  
-  // _buildSearchBar and _buildBottomNavBar remain the same
+
+  Widget _buildHeaderIcon(IconData icon, bool hasBadge) {
+    return Stack(
+      children: [
+        IconButton(
+          icon: Icon(icon, color: Colors.white, size: 26),
+          onPressed: () {},
+        ),
+        if (hasBadge)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: HomePage.accentRed,
+                shape: BoxShape.circle,
+              ),
+            ),
+          )
+      ],
+    );
+  }
+
   Widget _buildSearchBar() {
     return Container(
-      height: 45,
+      height: 50,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: const TextField(
         decoration: InputDecoration(
-          hintText: "Search meal packages...",
-          prefixIcon: Icon(Icons.search, color: HomePage.primaryOrange),
+          hintText: "Search your favorite home-cooked meal...",
+          hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+          prefixIcon: Icon(Icons.search_rounded, color: HomePage.primaryOrange),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 12),
+          contentPadding: EdgeInsets.symmetric(vertical: 15),
         ),
       ),
     );
@@ -303,27 +294,19 @@ class _HomePageState extends State<HomePage> {
   Widget _buildBottomNavBar(BuildContext context) {
     return BottomNavigationBar(
       currentIndex: 0,
+      elevation: 20,
       selectedItemColor: HomePage.primaryOrange,
-      unselectedItemColor: const Color.fromARGB(255, 0, 0, 0),
+      unselectedItemColor: Colors.grey[400],
       showUnselectedLabels: true,
+      type: BottomNavigationBarType.fixed,
       backgroundColor: Colors.white,
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
       items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long),
-          label: 'Orders',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profile',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Orders'),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), label: 'Profile'),
       ],
-      onTap: (index) {
-        // Navigation logic for bottom bar goes here
-      },
+      onTap: (index) {},
     );
   }
 }
