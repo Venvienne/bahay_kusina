@@ -1,3 +1,5 @@
+// lib/screens/home_page.dart (Updated)
+
 import 'package:flutter/material.dart';
 import 'meal_card.dart';
 
@@ -13,10 +15,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // 1. Add a controller and a search string state
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = "";
-
+  // ... mealPackages list remains the same ...
   final List<Map<String, dynamic>> mealPackages = [
     {
       'type': 'Breakfast',
@@ -57,81 +56,76 @@ class _HomePageState extends State<HomePage> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    // 2. Listen to search changes
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    const List<String> categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Merienda', 'Dessert'];
+    const List<String> categories = [
+      'All',
+      'Breakfast',
+      'Lunch',
+      'Dinner',
+      'Merienda',
+      'Dessert'
+    ];
 
     return DefaultTabController(
       length: categories.length,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F8F8),
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return <Widget>[
               SliverAppBar(
-                expandedHeight: 200.0,
+                expandedHeight: 200.0, 
                 floating: true,
                 pinned: true,
                 snap: true,
-                automaticallyImplyLeading: false,
-                leading: null,
-                elevation: 0,
                 backgroundColor: HomePage.primaryOrange,
                 flexibleSpace: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.pin,
+                  centerTitle: false,
                   background: Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [HomePage.primaryOrange, HomePage.secondaryOrange],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                       ),
                     ),
+                    // --- FIX 3: Placing custom header content in the background Stack ---
                     child: Stack(
                       children: [
                         Positioned(
-                          top: MediaQuery.of(context).padding.top + 10,
-                          left: 20,
-                          right: 20,
-                          child: _buildHeaderContent(),
+                          top: MediaQuery.of(context).padding.top + 5,
+                          left: 0,
+                          right: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            child: _buildHeaderContent(),
+                          ),
                         ),
                       ],
                     ),
+                    // -----------------------------------------------------------------------------
                   ),
                 ),
                 bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(110.0),
+                  // Use a preferred size that exactly fits the search bar and TabBar
+                  preferredSize: const Size.fromHeight(100.0), 
                   child: Column(
                     children: [
+                      // --- FIX 1: Increased vertical padding for search bar visibility ---
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                        child: _buildSearchBar(), // Controller is linked here
+                        padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 10.0),
+                        child: _buildSearchBar(),
                       ),
+                      // --------------------------------------------------------------------
                       TabBar(
                         isScrollable: true,
-                        indicatorColor: Colors.transparent,
-                        dividerColor: Colors.transparent,
+                        indicatorSize: TabBarIndicatorSize.label,
+                        indicatorWeight: 3.0,
+                        indicatorColor: Colors.white,
                         labelColor: Colors.white,
-                        unselectedLabelColor: Colors.white.withOpacity(0.7),
-                        tabAlignment: TabAlignment.start,
-                        padding: const EdgeInsets.only(left: 15, bottom: 8),
-                        tabs: categories.map((name) => _buildTabPill(name)).toList(),
+                        unselectedLabelColor: Colors.white70,
+                        tabs: categories
+                            .map((name) => Tab(text: name))
+                            .toList(),
                       ),
                     ],
                   ),
@@ -141,15 +135,57 @@ class _HomePageState extends State<HomePage> {
           },
           body: TabBarView(
             children: categories.map((category) {
-              // 3. COMBINED FILTERING LOGIC
-              final filteredPackages = mealPackages.where((meal) {
-                final matchesCategory = (category == 'All' || meal['type'] == category);
-                final matchesSearch = meal['title'].toString().toLowerCase().contains(_searchQuery) ||
-                                     meal['vendor'].toString().toLowerCase().contains(_searchQuery);
-                return matchesCategory && matchesSearch;
-              }).toList();
+              final filteredPackages = category == 'All'
+                  ? mealPackages
+                  : mealPackages
+                      .where((meal) => meal['type'] == category)
+                      .toList();
 
-              return _buildPackageList(filteredPackages, category);
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 15.0, left: 10, bottom: 5),
+                      child: Text(
+                        'Available Packages',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: const Color.fromARGB(255, 0, 0, 0)),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10, bottom: 10),
+                      child: Text(
+                        'From local home-based vendors',
+                        style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0), fontSize: 13),
+                      ),
+                    ),
+                    Expanded(
+                      child: filteredPackages.isEmpty
+                          ? Center(child: Text('No $category packages available.'))
+                          : ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: filteredPackages.length,
+                              itemBuilder: (context, index) {
+                                final meal = filteredPackages[index];
+                                return MealCard(
+                                  type: meal['type'],
+                                  title: meal['title'],
+                                  vendor: meal['vendor'],
+                                  desc: meal['desc'],
+                                  price: meal['price'],
+                                  left: meal['left'],
+                                  imageUrl: meal['image'],
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              );
             }).toList(),
           ),
         ),
@@ -158,118 +194,109 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTabPill(String name) {
-    return Tab(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(20.0),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-        ),
-        child: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-      ),
-    );
-  }
-
-  Widget _buildPackageList(List<Map<String, dynamic>> items, String category) {
-    if (items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off_rounded, size: 80, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text("No packages found", 
-              style: TextStyle(color: Colors.grey[600], fontSize: 16, fontWeight: FontWeight.w500)),
-            const Text("Try searching for something else", 
-              style: TextStyle(color: Colors.grey, fontSize: 13)),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
-      itemCount: items.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 15, top: 5, left: 5),
-            child: Text(
-              _searchQuery.isEmpty ? 'Available $category Packages' : 'Results for "$_searchQuery"',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-          );
-        }
-        final meal = items[index - 1];
-        return MealCard(
-          type: meal['type'],
-          title: meal['title'],
-          vendor: meal['vendor'],
-          desc: meal['desc'],
-          price: meal['price'],
-          left: meal['left'],
-          imageUrl: meal['image'],
-        );
-      },
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5)),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController, // Linked the controller here
-        decoration: InputDecoration(
-          hintText: "Search meals or vendors...",
-          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: const Icon(Icons.search_rounded, color: HomePage.primaryOrange),
-          suffixIcon: _searchQuery.isNotEmpty 
-            ? IconButton(
-                icon: const Icon(Icons.clear_rounded, color: Colors.grey),
-                onPressed: () => _searchController.clear(),
-              ) 
-            : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15),
-        ),
-      ),
-    );
-  }
-
-  // ... (Header and BottomNavBar methods remain the same)
+  // --- No changes needed here, as content is moved and positioned in SliverAppBar's background ---
   Widget _buildHeaderContent() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dynamicLogoSize = screenWidth * 0.18;
+    final dynamicPadding = dynamicLogoSize * 0.15;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const CircleAvatar(
-              backgroundColor: Colors.white,
-              radius: 20,
-              child: Icon(Icons.restaurant_menu, color: HomePage.primaryOrange, size: 20),
+            Container(
+              padding: EdgeInsets.all(dynamicPadding),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/bahay_kusina_logo.png',
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
-            const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Text("BahayKusina", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                Text("Meal Packages", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text(
+                  "BahayKusina",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                Text(
+                  "Meal Packages",
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
               ],
             ),
           ],
         ),
-        IconButton(icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white), onPressed: () {}),
+        Row(
+          children: [
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_none,
+                      color: Colors.white),
+                  onPressed: () {},
+                ),
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: HomePage.accentRed,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 12,
+                      minHeight: 12,
+                    ),
+                  ),
+                )
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
+              onPressed: () {},
+            ),
+          ],
+        ),
       ],
+    );
+  }
+  // --------------------------------------------------------------------------------------------------
+  
+  // _buildSearchBar and _buildBottomNavBar remain the same
+  Widget _buildSearchBar() {
+    return Container(
+      height: 45,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: const TextField(
+        decoration: InputDecoration(
+          hintText: "Search meal packages...",
+          prefixIcon: Icon(Icons.search, color: HomePage.primaryOrange),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
     );
   }
 
@@ -277,13 +304,26 @@ class _HomePageState extends State<HomePage> {
     return BottomNavigationBar(
       currentIndex: 0,
       selectedItemColor: HomePage.primaryOrange,
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
+      unselectedItemColor: const Color.fromARGB(255, 0, 0, 0),
+      showUnselectedLabels: true,
+      backgroundColor: Colors.white,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Orders'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), label: 'Profile'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.receipt_long),
+          label: 'Orders',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          label: 'Profile',
+        ),
       ],
+      onTap: (index) {
+        // Navigation logic for bottom bar goes here
+      },
     );
   }
 }
