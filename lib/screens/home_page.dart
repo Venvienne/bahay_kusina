@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
       'desc': 'Start your day right with a hearty Filipino breakfast',
       'price': 150,
       'left': 20,
-      'image': 'assets/images/Food1.jpg',
+      'image': 'assets/images/food_package_1.jpg',
     },
     {
       'type': 'Lunch',
