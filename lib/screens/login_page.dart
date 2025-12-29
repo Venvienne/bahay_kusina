@@ -1,7 +1,7 @@
 import 'signup_page.dart';
 import 'forgot_password_page.dart';
 import 'package:flutter/material.dart';
-import 'home_page.dart'; 
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   final String initialRole;
@@ -31,7 +31,10 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             _buildHeader(context),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 30),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 25.0,
+                vertical: 30,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -42,19 +45,23 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 12),
                   _buildUserToggle(),
                   const SizedBox(height: 25),
-                  
-                  const Text("Email or Phone", 
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+
+                  const Text(
+                    "Email or Phone",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
                   const SizedBox(height: 8),
                   _buildTextField(hint: "juan@example.com or 09171234567"),
-                  
+
                   const SizedBox(height: 20),
-                  
-                  const Text("Password", 
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+
+                  const Text(
+                    "Password",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
                   const SizedBox(height: 8),
                   _buildPasswordField(),
-                  
+
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -64,21 +71,26 @@ class _LoginPageState extends State<LoginPage> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => ForgotPasswordPage(
-                              userRole: _selectedUserType == 1 ? "Vendor" : "Customer",
+                              userRole: _selectedUserType == 1
+                                  ? "Vendor"
+                                  : "Customer",
                             ),
                           ),
                         );
                       },
                       child: const Text(
                         "Forgot Password?",
-                        style: TextStyle(color: HomePage.primaryOrange, fontSize: 13),
+                        style: TextStyle(
+                          color: HomePage.primaryOrange,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
                   _buildLoginButton(),
-                  
+
                   const SizedBox(height: 30),
                   _buildSignUpLink(),
                 ],
@@ -91,6 +103,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dynamicLogoSize = screenWidth * 0.18;
+    final dynamicPadding = dynamicLogoSize * 0.15;
+
     return Container(
       width: double.infinity,
       height: 180,
@@ -113,20 +129,26 @@ class _LoginPageState extends State<LoginPage> {
                   children: const [
                     Icon(Icons.arrow_back, color: Colors.white, size: 20),
                     SizedBox(width: 5),
-                    Text("Back", style: TextStyle(color: Colors.white, fontSize: 16)),
+                    Text(
+                      "Back",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
+                    padding: EdgeInsets.all(dynamicPadding),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/bahay_kusina_logo.png',
+                        width: 60,
+                      height: 60,
+                      fit: BoxFit.contain,
+                      ),
                     ),
-                    child: const Icon(Icons.lunch_dining, color: Colors.white, size: 30),
                   ),
                   const SizedBox(width: 15),
                   Column(
@@ -134,7 +156,11 @@ class _LoginPageState extends State<LoginPage> {
                     children: const [
                       Text(
                         "Welcome Back",
-                        style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         "Log in to continue",
@@ -207,7 +233,10 @@ class _LoginPageState extends State<LoginPage> {
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 15,
+          ),
         ),
       ),
     );
@@ -225,13 +254,17 @@ class _LoginPageState extends State<LoginPage> {
           hintText: "Enter your password",
           hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 15,
+          ),
           suffixIcon: IconButton(
             icon: Icon(
               _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
               color: Colors.grey,
             ),
-            onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+            onPressed: () =>
+                setState(() => _isPasswordVisible = !_isPasswordVisible),
           ),
         ),
       ),
@@ -251,13 +284,19 @@ class _LoginPageState extends State<LoginPage> {
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFFB886), 
+          backgroundColor: const Color(0xFFFFB886),
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         child: const Text(
           "Log In",
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -267,7 +306,10 @@ class _LoginPageState extends State<LoginPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Don't have an account? ", style: TextStyle(color: Colors.black54)),
+        const Text(
+          "Don't have an account? ",
+          style: TextStyle(color: Colors.black54),
+        ),
         GestureDetector(
           // --- CONNECTED TO SIGN UP ---
           onTap: () {
@@ -278,7 +320,10 @@ class _LoginPageState extends State<LoginPage> {
           },
           child: const Text(
             "Sign Up",
-            style: TextStyle(color: HomePage.primaryOrange, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: HomePage.primaryOrange,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],

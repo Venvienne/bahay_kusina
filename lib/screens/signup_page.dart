@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/material.dart';
 import 'home_page.dart'; // Target for Customer signup
 import 'vendor_home_page.dart'; // Target for Vendor signup
@@ -300,7 +302,7 @@ class _SignUpPageState extends State<SignUpPage> {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: inputFillColor,
+        fillColor: const Color.fromARGB(255, 254, 253, 253),
         contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -323,7 +325,7 @@ class _SignUpPageState extends State<SignUpPage> {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: inputFillColor,
+        fillColor: const Color.fromARGB(255, 255, 254, 254),
         contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
         suffixIcon: IconButton(
           icon: Icon(
