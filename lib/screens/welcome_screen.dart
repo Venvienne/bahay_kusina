@@ -34,8 +34,8 @@ class WelcomeScreen extends StatelessWidget {
                 child: ClipOval(
                   child: Image.asset(
                     'assets/images/bahay_kusina_logo.png',
-                    width: 130,
-                    height: 130,
+                    width: 120,
+                    height: 120,
                     fit: BoxFit.contain,
                   ),
                 ),

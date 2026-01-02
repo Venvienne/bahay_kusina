@@ -118,7 +118,7 @@ class MealCard extends StatelessWidget {
             ),
             
             Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '₱$price',

@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage> {
       'desc': 'Complete lunch meal for the whole family',
       'price': 350,
       'left': 15,
-      'image': 'assets/images/Food1.jpg',
+      'image': 'assets/images/food_package_2.jpg',
     },
     {
       'type': 'Merienda',
