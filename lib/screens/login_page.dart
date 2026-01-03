@@ -1,9 +1,12 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/auth_text_field.dart';
-import '../services/auth_service.dart';
+import '../utils/validation_utils.dart';
+import '../utils/error_handler.dart';
+import '../providers/auth_provider.dart';
 import 'signup_page.dart';
 import 'forgot_password_page.dart';
 import 'home_page.dart';
@@ -19,10 +22,12 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   late int _selectedUserType; // 0 = Customer, 1 = Vendor
   bool _isPasswordVisible = false;
-  bool _isLoading = false;
 
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
+  
+  String? _emailError;
+  String? _passwordError;
 
   @override
   void initState() {
@@ -39,42 +44,35 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  void _validateInputs() {
+    setState(() {
+      _emailError = ValidationUtils.validateEmail(_emailController.text);
+      _passwordError = ValidationUtils.validatePassword(_passwordController.text);
+    });
+  }
+
   void _handleLogin(BuildContext context) async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
+    _validateInputs();
+
+    // If validation fails, stop
+    if (_emailError != null || _passwordError != null) {
       return;
     }
 
-    setState(() => _isLoading = true);
+    final authProvider = context.read<AuthProvider>();
+    
+    final success = await authProvider.login(
+      ValidationUtils.sanitizeEmail(_emailController.text),
+      _passwordController.text,
+    );
 
-    try {
-      final authService = AuthService();
-
-      final success = await authService.login(
-        _emailController.text,
-        _passwordController.text,
+    if (success && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
-
-      if (success && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login failed. Please try again.')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } else if (mounted && authProvider.errorMessage != null) {
+      ErrorHandler.showErrorSnackBar(context, authProvider.errorMessage!);
     }
   }
 
@@ -100,6 +98,10 @@ class _LoginPageState extends State<LoginPage> {
                   AuthTextField(
                     hint: "juan@example.com or 09171234567",
                     controller: _emailController,
+                    errorText: _emailError,
+                    onChanged: (_) {
+                      setState(() => _emailError = null);
+                    },
                   ),
                   const SizedBox(height: 20),
                   _buildLabel("Password"),
@@ -109,7 +111,11 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _passwordController,
                     isPassword: true,
                     obscureText: !_isPasswordVisible,
+                    errorText: _passwordError,
                     onToggleVisibility: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                    onChanged: (_) {
+                      setState(() => _passwordError = null);
+                    },
                   ),
                   _buildForgotPasswordButton(),
                   const SizedBox(height: 20),
@@ -231,25 +237,29 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : () => _handleLogin(context),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryOrangeLight,
-          disabledBackgroundColor: Colors.grey.shade400,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-              )
-            : const Text("Log In", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-      ),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        return SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: ElevatedButton(
+            onPressed: authProvider.isLoading ? null : () => _handleLogin(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryOrangeLight,
+              disabledBackgroundColor: Colors.grey.shade400,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: authProvider.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                : const Text("Log In", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+        );
+      },
     );
   }
 
