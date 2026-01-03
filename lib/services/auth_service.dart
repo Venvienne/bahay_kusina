@@ -1,4 +1,6 @@
 // lib/services/auth_service.dart
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 
 enum UserRole { customer, vendor }
@@ -38,68 +40,62 @@ class AuthService {
   bool get isAuthenticated => _currentUser != null;
   String get userRole => _currentUser?.role == UserRole.vendor ? "Vendor" : "Customer";
 
-  // Mock login - in production, this would connect to Firebase or API
-  Future<bool> login(String emailOrPhone, String password, UserRole role) async {
+  /// Local authentication (no Firebase needed)
+  Future<bool> login(String email, String password) async {
     try {
       // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(milliseconds: 800));
 
-      // Mock validation
-      if (emailOrPhone.isEmpty || password.isEmpty) {
-        throw Exception('Email/Phone and password are required');
+      if (email.isEmpty || password.isEmpty) {
+        throw Exception('Email and password are required');
       }
 
-      // Create mock user
+      if (password.length < 6) {
+        throw Exception('Password must be at least 6 characters');
+      }
+
+      // Mock user creation
       _currentUser = AuthUser(
-        userId: 'user_${DateTime.now().millisecondsSinceEpoch}',
-        email: emailOrPhone.contains('@') ? emailOrPhone : 'user@example.com',
-        fullName: 'Juan Dela Cruz',
-        phone: emailOrPhone.contains('@') ? '09171234567' : emailOrPhone,
-        address: '123 Sampaguita St., Quezon City',
-        role: role,
+        userId: 'user_${email.replaceAll('@', '_').replaceAll('.', '_')}',
+        email: email,
+        fullName: email.split('@')[0],
+        phone: '09175551234',
+        address: 'Manila, Philippines',
+        role: UserRole.customer,
         createdAt: DateTime.now(),
       );
 
       return true;
     } catch (e) {
-      throw Exception('Login failed: ${e.toString()}');
+      print('Login error: $e');
+      return false;
     }
   }
 
-  // Mock signup
+  /// Local signup
   Future<bool> signup({
-    required String fullName,
     required String email,
+    required String password,
+    required String fullName,
     required String phone,
     required String address,
-    required String password,
-    required String confirmPassword,
     required UserRole role,
   }) async {
     try {
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
+      // Validate inputs
+      await Future.delayed(const Duration(milliseconds: 800));
 
-      // Mock validation
-      if (fullName.isEmpty ||
-          email.isEmpty ||
-          phone.isEmpty ||
-          address.isEmpty ||
-          password.isEmpty) {
+      if (email.isEmpty || password.isEmpty || fullName.isEmpty) {
         throw Exception('All fields are required');
       }
 
-      if (password != confirmPassword) {
-        throw Exception('Passwords do not match');
-      }
-
-      if (password.length < 8) {
-        throw Exception('Password must be at least 8 characters');
+      if (password.length < 6) {
+        throw Exception('Password must be at least 6 characters');
       }
 
       // Create mock user
       _currentUser = AuthUser(
-        userId: 'user_${DateTime.now().millisecondsSinceEpoch}',
+        userId: 'user_${email.replaceAll('@', '_').replaceAll('.', '_')}',
         email: email,
         fullName: fullName,
         phone: phone,
@@ -110,34 +106,31 @@ class AuthService {
 
       return true;
     } catch (e) {
-      throw Exception('Signup failed: ${e.toString()}');
+      print('Signup error: $e');
+      return false;
     }
   }
 
-  // Mock password reset
-  Future<bool> requestPasswordReset(String emailOrPhone) async {
+  /// Password reset
+  Future<bool> requestPasswordReset(String email) async {
     try {
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (emailOrPhone.isEmpty) {
-        throw Exception('Email or phone is required');
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (email.isEmpty) {
+        throw Exception('Email is required');
       }
-
-      // In production, this would send an email/SMS
       return true;
     } catch (e) {
-      throw Exception('Password reset failed: ${e.toString()}');
+      print('Password reset error: $e');
+      return false;
     }
   }
 
-  // Logout
-  void logout() {
+  /// Logout
+  Future<void> logout() async {
     _currentUser = null;
+    await Future.delayed(const Duration(milliseconds: 200));
   }
 
-  // Check authentication status
-  bool isLoggedIn() {
-    return _currentUser != null;
-  }
+  /// Get user role as string
+  String get roleName => _currentUser?.role == UserRole.vendor ? 'vendor' : 'customer';
 }

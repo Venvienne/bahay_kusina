@@ -7,7 +7,6 @@ import '../services/auth_service.dart';
 import 'signup_page.dart';
 import 'forgot_password_page.dart';
 import 'home_page.dart';
-import 'vendor_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   final String initialRole;
@@ -52,19 +51,20 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authService = AuthService();
-      final role = _selectedUserType == 0 ? UserRole.customer : UserRole.vendor;
 
       final success = await authService.login(
         _emailController.text,
         _passwordController.text,
-        role,
       );
 
       if (success && mounted) {
-        final targetPage = _selectedUserType == 0 ? const HomePage() : const VendorHomePage();
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => targetPage),
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login failed. Please try again.')),
         );
       }
     } catch (e) {
