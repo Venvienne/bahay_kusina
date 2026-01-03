@@ -2,25 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'home_page.dart'; // Import HomePage to access static color constants
+import '../models/meal_package.dart';
 
 class MealCard extends StatelessWidget {
-  final String type;
-  final String title;
-  final String vendor;
-  final String desc;
-  final int price;
-  final int left;
-  final String imageUrl;
+  final MealPackage meal;
 
   const MealCard({
     super.key,
-    required this.type,
-    required this.title,
-    required this.vendor,
-    required this.desc,
-    required this.price,
-    required this.left,
-    required this.imageUrl,
+    required this.meal,
   });
 
   Color _getTypeColor(String type) {
@@ -53,7 +42,7 @@ class MealCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(10.0),
               child: Image.asset(
-                imageUrl,
+                meal.imageUrl,
                 width: 90,
                 height: 90,
                 fit: BoxFit.cover,
@@ -77,11 +66,11 @@ class MealCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: _getTypeColor(type),
+                      color: _getTypeColor(meal.type),
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text(
-                      type,
+                      meal.type,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -91,7 +80,7 @@ class MealCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    title,
+                    meal.title,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16),
                   ),
@@ -100,7 +89,7 @@ class MealCard extends StatelessWidget {
                     children: [
                       Icon(Icons.location_on, size: 12, color: Colors.grey.shade600),
                       Text(
-                        vendor,
+                        meal.vendor,
                         style: TextStyle(
                             fontSize: 12, color: Colors.grey.shade600),
                       ),
@@ -108,7 +97,7 @@ class MealCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    desc,
+                    meal.desc,
                     style: const TextStyle(fontSize: 13, color: Colors.black54),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -118,45 +107,70 @@ class MealCard extends StatelessWidget {
             ),
             
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // 1. Formatted Price
                 Text(
-                  '₱$price',
+                  '₱${meal.price}',
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      // Access static color from the imported HomePage class
-                      color: HomePage.primaryOrange),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Color(0xFFFF6B00), // Primary Orange
+                    letterSpacing: -0.5,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                
+                const SizedBox(height: 12),
+
+                // 2. Enhanced Order Button
                 SizedBox(
-                  height: 30,
+                  height: 32,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Handle order action
+                    onPressed: meal.isOutOfStock ? null : () {
+                      // Action logic here
                     },
                     style: ElevatedButton.styleFrom(
-                      // Access static color from the imported HomePage class
-                      backgroundColor: HomePage.primaryOrange,
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      backgroundColor: const Color(0xFFFF6B00),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(20), // More modern pill shape
+                      ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      "Order",
-                      style: TextStyle(fontSize: 14, color: Colors.white),
+                    child: Text(
+                      meal.isOutOfStock ? "Sold Out" : "Order",
+                      style: const TextStyle(
+                        fontSize: 13, 
+                        fontWeight: FontWeight.bold
+                      ),
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 8),
-                Text(
-                  '$left left',
-                  style: TextStyle(
-                      fontSize: 11,
-                      // Access static color from the imported HomePage class
-                      color: HomePage.accentRed, 
-                      fontWeight: FontWeight.bold),
+
+                // 3. Dynamic Stock Indicator
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.inventory_2_outlined, 
+                      size: 10, 
+                      color: meal.stockColor
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      meal.isOutOfStock ? 'No stock' : '${meal.left} left',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: meal.stockColor,
+                        fontWeight: meal.isLowStock ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

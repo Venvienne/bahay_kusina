@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'meal_card.dart';
+import '../models/meal_package.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -168,15 +169,20 @@ class _HomePageState extends State<HomePage> {
                     );
                   }
                   
-                  final meal = filteredPackages[index - 1];
+                  final mealMap = filteredPackages[index - 1];
+                  // Create a MealPackage instance from the map so it matches MealCard's expected type
+                  final mealPackage = MealPackage(
+                    type: mealMap['type'] as String,
+                    title: mealMap['title'] as String,
+                    vendor: mealMap['vendor'] as String,
+                    desc: mealMap['desc'] as String,
+                    price: mealMap['price'] as int,
+                    left: mealMap['left'] as int,
+                    imageUrl: mealMap['image'] as String,
+                  );
+
                   return MealCard(
-                    type: meal['type'],
-                    title: meal['title'],
-                    vendor: meal['vendor'],
-                    desc: meal['desc'],
-                    price: meal['price'],
-                    left: meal['left'],
-                    imageUrl: meal['image'],
+                    meal: mealPackage,
                   );
                 },
               );

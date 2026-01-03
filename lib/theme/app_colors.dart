@@ -5,9 +5,9 @@ class AppColors {
   static const Color secondaryOrange = Color(0xFFFF8C3B);
   static const Color primaryOrangeLight = Color(0xFFFF8C3B); // Lighter orange
   static const Color selectorBackground = Color(0xFFFFF3E0); // Light orange background for selectors
-  static const Color fieldBackground = Color(0xFFEEEEEE);
+  static const Color fieldBackground = Color.fromARGB(255, 247, 243, 243);
   static const Color inputFillColor = Color(0xFFF5F5F5);
-  static const Color textGrey = Colors.white70;
+  static const Color textGrey = Color.fromARGB(179, 122, 121, 121);
   static const Color scaffoldBackground = Color(0xFFF0F0F0);
 
   // Custom MaterialColor for the primarySwatch
