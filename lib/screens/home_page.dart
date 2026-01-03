@@ -2,7 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'meal_card.dart';
+import 'orders_page.dart';
+import 'cart_page.dart';
 import '../models/meal_package.dart';
+import '../providers/cart_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +19,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late CartProvider _cartProvider;
   final List<Map<String, dynamic>> mealPackages = [
     {
       'type': 'Breakfast',
@@ -56,6 +60,12 @@ class _HomePageState extends State<HomePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _cartProvider = CartProvider();
+  }
+
+  @override
   Widget build(BuildContext context) {
     const List<String> categories = [
       'All',
@@ -69,7 +79,7 @@ class _HomePageState extends State<HomePage> {
     return DefaultTabController(
       length: categories.length,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F8F8), // Subtle background contrast
+        backgroundColor: const Color(0xFFF8F8F8),
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return <Widget>[
@@ -78,10 +88,8 @@ class _HomePageState extends State<HomePage> {
                 floating: true,
                 pinned: true,
                 snap: true,
-                // --- REMOVED BACK ICON LOGIC ---
-                automaticallyImplyLeading: false, 
-                leading: null, 
-                // -------------------------------
+                automaticallyImplyLeading: false,
+                leading: null,
                 elevation: 0,
                 backgroundColor: HomePage.primaryOrange,
                 flexibleSpace: FlexibleSpaceBar(
@@ -107,7 +115,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(110.0), 
+                  preferredSize: const Size.fromHeight(110.0),
                   child: Column(
                     children: [
                       Padding(
@@ -116,7 +124,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       TabBar(
                         isScrollable: true,
-                        indicatorColor: Colors.transparent, // Hide default underline
+                        indicatorColor: Colors.transparent,
                         dividerColor: Colors.transparent,
                         labelColor: Colors.white,
                         unselectedLabelColor: Colors.white.withOpacity(0.7),
@@ -127,7 +135,7 @@ class _HomePageState extends State<HomePage> {
                             padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20.0), // Pill style
+                              borderRadius: BorderRadius.circular(20.0),
                               border: Border.all(color: Colors.white.withOpacity(0.1)),
                             ),
                             child: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -168,9 +176,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                     );
                   }
-                  
+
                   final mealMap = filteredPackages[index - 1];
-                  // Create a MealPackage instance from the map so it matches MealCard's expected type
                   final mealPackage = MealPackage(
                     type: mealMap['type'] as String,
                     title: mealMap['title'] as String,
@@ -183,6 +190,10 @@ class _HomePageState extends State<HomePage> {
 
                   return MealCard(
                     meal: mealPackage,
+                    cartProvider: _cartProvider,
+                    onOrderAdded: () {
+                      setState(() {});
+                    },
                   );
                 },
               );
@@ -211,8 +222,8 @@ class _HomePageState extends State<HomePage> {
                   width: 42,
                   height: 42,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => 
-                    const Icon(Icons.restaurant, color: Colors.white),
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.restaurant, color: Colors.white),
                 ),
               ),
             ),
@@ -252,7 +263,36 @@ class _HomePageState extends State<HomePage> {
       children: [
         IconButton(
           icon: Icon(icon, color: Colors.white, size: 26),
-          onPressed: () {},
+          onPressed: () {
+            if (!hasBadge) {
+              // This is the shopping bag icon - open cart
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartPage(
+                    cartProvider: _cartProvider,
+                    onCheckout: () {
+                      // Handle checkout
+                      _cartProvider.clearCart();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Order placed successfully!',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Color(0xFF4CAF50),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ).then((_) {
+                setState(() {});
+              });
+            }
+          },
         ),
         if (hasBadge)
           Positioned(
@@ -264,6 +304,29 @@ class _HomePageState extends State<HomePage> {
               decoration: const BoxDecoration(
                 color: HomePage.accentRed,
                 shape: BoxShape.circle,
+              ),
+            ),
+          )
+        else if (_cartProvider.itemCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: const BoxDecoration(
+                color: HomePage.accentRed,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  _cartProvider.itemCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           )
@@ -312,7 +375,24 @@ class _HomePageState extends State<HomePage> {
         BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Orders'),
         BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), label: 'Profile'),
       ],
-      onTap: (index) {},
+      onTap: (index) {
+        if (index == 0) {
+          // Stay on Home
+        } else if (index == 1) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const OrdersPage()),
+          );
+        } else if (index == 2) {
+          // Navigate to Profile
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile page coming soon!'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
     );
   }
 }

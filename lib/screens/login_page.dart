@@ -1,9 +1,13 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../widgets/auth_text_field.dart';
+import '../services/auth_service.dart';
 import 'signup_page.dart';
 import 'forgot_password_page.dart';
 import 'home_page.dart';
+import 'vendor_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   final String initialRole;
@@ -16,11 +20,62 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   late int _selectedUserType; // 0 = Customer, 1 = Vendor
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
+  late TextEditingController _emailController;
+  late TextEditingController _passwordController;
 
   @override
   void initState() {
     super.initState();
     _selectedUserType = widget.initialRole == "Vendor" ? 1 : 0;
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin(BuildContext context) async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = AuthService();
+      final role = _selectedUserType == 0 ? UserRole.customer : UserRole.vendor;
+
+      final success = await authService.login(
+        _emailController.text,
+        _passwordController.text,
+        role,
+      );
+
+      if (success && mounted) {
+        final targetPage = _selectedUserType == 0 ? const HomePage() : const VendorHomePage();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => targetPage),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -42,12 +97,16 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 25),
                   _buildLabel("Email or Phone"),
                   const SizedBox(height: 8),
-                  const AuthTextField(hint: "juan@example.com or 09171234567"),
+                  AuthTextField(
+                    hint: "juan@example.com or 09171234567",
+                    controller: _emailController,
+                  ),
                   const SizedBox(height: 20),
                   _buildLabel("Password"),
                   const SizedBox(height: 8),
                   AuthTextField(
                     hint: "Enter your password",
+                    controller: _passwordController,
                     isPassword: true,
                     obscureText: !_isPasswordVisible,
                     onToggleVisibility: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
@@ -65,8 +124,6 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
-  // --- ENCAPSULATED UI COMPONENTS ---
 
   Widget _buildLabel(String text) {
     return Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14));
@@ -162,7 +219,11 @@ class _LoginPageState extends State<LoginPage> {
       child: TextButton(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ForgotPasswordPage(userRole: _selectedUserType == 1 ? "Vendor" : "Customer")),
+          MaterialPageRoute(
+            builder: (context) => ForgotPasswordPage(
+              userRole: _selectedUserType == 1 ? "Vendor" : "Customer",
+            ),
+          ),
         ),
         child: const Text("Forgot Password?", style: TextStyle(color: AppColors.primaryOrange, fontSize: 13)),
       ),
@@ -174,13 +235,20 @@ class _LoginPageState extends State<LoginPage> {
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomePage())),
+        onPressed: _isLoading ? null : () => _handleLogin(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryOrangeLight,
+          disabledBackgroundColor: Colors.grey.shade400,
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: const Text("Log In", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        child: _isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              )
+            : const Text("Log In", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
   }

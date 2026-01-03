@@ -2,14 +2,20 @@
 
 import 'package:flutter/material.dart';
 import 'home_page.dart'; // Import HomePage to access static color constants
+import 'order_details_page.dart';
 import '../models/meal_package.dart';
+import '../providers/cart_provider.dart';
 
 class MealCard extends StatelessWidget {
   final MealPackage meal;
+  final CartProvider? cartProvider;
+  final VoidCallback? onOrderAdded;
 
   const MealCard({
     super.key,
     required this.meal,
+    this.cartProvider,
+    this.onOrderAdded,
   });
 
   Color _getTypeColor(String type) {
@@ -128,7 +134,32 @@ class MealCard extends StatelessWidget {
                   height: 32,
                   child: ElevatedButton(
                     onPressed: meal.isOutOfStock ? null : () {
-                      // Action logic here
+                      // Navigate to order details page
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OrderDetailsPage(
+                            meal: meal,
+                            onOrderConfirmed: (quantity) {
+                              if (cartProvider != null) {
+                                cartProvider!.addToCart(meal, quantity);
+                                onOrderAdded?.call();
+                                // Show snackbar confirmation
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '$quantity x ${meal.title} added to cart',
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                    backgroundColor: const Color(0xFFFF6B00),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF6B00),

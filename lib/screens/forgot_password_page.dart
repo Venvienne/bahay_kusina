@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
-  // 1. THIS IS THE KEY CHANGE: Receiving the role from the Login Page
-  final String userRole; 
-  
+  final String userRole;
+
   const ForgotPasswordPage({super.key, required this.userRole});
 
   @override
@@ -11,14 +11,20 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  // Constants to match your BahayKusina branding
   static const Color primaryOrange = Color(0xFFFF6B00);
   static const Color secondaryOrange = Color(0xFFFF8C3B);
   static const Color inputFillColor = Color(0xFFEEEEEE);
 
   final TextEditingController _emailController = TextEditingController();
+  bool _isLoading = false;
 
-  void _submitResetRequest() {
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  void _submitResetRequest() async {
     String input = _emailController.text;
     if (input.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -27,25 +33,40 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
 
-    // 2. CHANGE: Mentioning the role in the confirmation message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Reset link sent to $input for ${widget.userRole} account."),
-        backgroundColor: secondaryOrange,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-    
-    // Go back to login after showing the message
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) Navigator.pop(context);
-    });
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = AuthService();
+      await authService.requestPasswordReset(input);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Reset link sent to $input for ${widget.userRole} account."),
+            backgroundColor: secondaryOrange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) Navigator.pop(context);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Match Login background
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -57,8 +78,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Reset your Password", 
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)
+                      "Reset your Password",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
                     const Text(
@@ -66,44 +87,61 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     const SizedBox(height: 30),
-                    
-                    const Text("Email or Phone", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Email or Phone",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _emailController,
                       hint: "e.g., juan@example.com or 09171234567",
                       keyboardType: TextInputType.emailAddress,
                     ),
-                    
                     const SizedBox(height: 40),
-                    
-                    // Reset Button
                     SizedBox(
                       width: double.infinity,
+                      height: 55,
                       child: ElevatedButton(
-                        onPressed: _submitResetRequest,
+                        onPressed: _isLoading ? null : _submitResetRequest,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryOrange,
+                          disabledBackgroundColor: Colors.grey.shade400,
                           padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          "Send Reset Link", 
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Send Reset Link",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
-                    
                     const SizedBox(height: 20),
-                    
-                    // Link back to Login
                     Center(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
                         child: const Text(
-                          "Back to Log In", 
-                          style: TextStyle(color: primaryOrange, fontWeight: FontWeight.bold)
+                          "Back to Login",
+                          style: TextStyle(
+                            color: primaryOrange,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
@@ -119,53 +157,51 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(top: 10, left: 20, right: 20, bottom: 40),
       width: double.infinity,
+      height: 120,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryOrange, secondaryOrange], 
-          begin: Alignment.topCenter, 
-          end: Alignment.bottomCenter
-        ),
+        color: primaryOrange,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30), 
-          bottomRight: Radius.circular(30)
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Row(
+                  children: [
+                    Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                    SizedBox(width: 5),
+                    Text("Back", style: TextStyle(color: Colors.white, fontSize: 16)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Reset Password - ${widget.userRole}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          const Text(
-            "Security Check", 
-            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
-          ),
-          const SizedBox(height: 5),
-          // 3. CHANGE: Displaying the active role clearly in the header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              "Account type: ${widget.userRole}", 
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildTextField({
-    required TextEditingController controller, 
-    required String hint, 
-    required TextInputType keyboardType
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return TextField(
       controller: controller,
@@ -174,11 +210,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         hintText: hint,
         filled: true,
         fillColor: inputFillColor,
-        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12), 
-          borderSide: BorderSide.none
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }

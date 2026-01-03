@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart'; // For rich text links
+import 'package:flutter/gestures.dart';
 import '../theme/app_colors.dart';
 import '../widgets/signup_text_field.dart';
+import '../services/auth_service.dart';
 import 'home_page.dart';
 import 'vendor_home_page.dart';
 
@@ -16,6 +17,7 @@ class _SignUpPageState extends State<SignUpPage> {
   String selectedRole = "Order Food";
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailPhoneController = TextEditingController();
@@ -24,12 +26,62 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
-  void _handleSignUp() {
-    final targetPage = selectedRole == "Order Food" ? const HomePage() : const VendorHomePage();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Signing up to $selectedRole..."), backgroundColor: AppColors.secondaryOrange),
-    );
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => targetPage));
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailPhoneController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _handleSignUp() async {
+    if (_nameController.text.isEmpty ||
+        _emailPhoneController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _addressController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = AuthService();
+      final role = selectedRole == "Order Food" ? UserRole.customer : UserRole.vendor;
+
+      final success = await authService.signup(
+        fullName: _nameController.text,
+        email: _emailPhoneController.text,
+        phone: _phoneController.text,
+        address: _addressController.text,
+        password: _passwordController.text,
+        confirmPassword: _confirmPasswordController.text,
+        role: role,
+      );
+
+      if (success && mounted) {
+        final targetPage = selectedRole == "Order Food" ? const HomePage() : const VendorHomePage();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => targetPage),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -49,22 +101,33 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(height: 10),
                     _buildRoleSelector(),
                     const SizedBox(height: 25),
-                    
                     _buildLabel("Full Name"),
-                    SignupTextField(controller: _nameController, hint: "Juan Dela Cruz", keyboardType: TextInputType.name),
-                    
+                    SignupTextField(
+                      controller: _nameController,
+                      hint: "Juan Dela Cruz",
+                      keyboardType: TextInputType.name,
+                    ),
                     const SizedBox(height: 20),
                     _buildLabel("Email"),
-                    SignupTextField(controller: _emailPhoneController, hint: "juan@example.com", keyboardType: TextInputType.emailAddress),
-                    
+                    SignupTextField(
+                      controller: _emailPhoneController,
+                      hint: "juan@example.com",
+                      keyboardType: TextInputType.emailAddress,
+                    ),
                     const SizedBox(height: 20),
                     _buildLabel("Phone Number"),
-                    SignupTextField(controller: _phoneController, hint: "09171234567", keyboardType: TextInputType.phone),
-                    
+                    SignupTextField(
+                      controller: _phoneController,
+                      hint: "09171234567",
+                      keyboardType: TextInputType.phone,
+                    ),
                     const SizedBox(height: 20),
                     _buildLabel("Delivery Address"),
-                    SignupTextField(controller: _addressController, hint: "123 Mabini St., Barangay San Juan, Manila", keyboardType: TextInputType.streetAddress),
-
+                    SignupTextField(
+                      controller: _addressController,
+                      hint: "123 Mabini St., Barangay San Juan, Manila",
+                      keyboardType: TextInputType.streetAddress,
+                    ),
                     const SizedBox(height: 20),
                     _buildLabel("Password"),
                     SignupTextField(
@@ -74,7 +137,6 @@ class _SignUpPageState extends State<SignUpPage> {
                       obscureText: obscurePassword,
                       onToggleVisibility: () => setState(() => obscurePassword = !obscurePassword),
                     ),
-                    
                     const SizedBox(height: 20),
                     _buildLabel("Confirm Password"),
                     SignupTextField(
@@ -84,7 +146,6 @@ class _SignUpPageState extends State<SignUpPage> {
                       obscureText: obscureConfirmPassword,
                       onToggleVisibility: () => setState(() => obscureConfirmPassword = !obscureConfirmPassword),
                     ),
-
                     const SizedBox(height: 30),
                     _buildTermsAndConditions(),
                     const SizedBox(height: 20),
@@ -100,82 +161,120 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-    );
-  }
-
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 30, left: 25, right: 25, bottom: 30),
+      height: 120,
       decoration: const BoxDecoration(
-        color: AppColors.primaryOrange, // Solid orange header
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+        color: AppColors.primaryOrange,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Row(
+                  children: [
+                    Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                    SizedBox(width: 5),
+                    Text("Back", style: TextStyle(color: Colors.white, fontSize: 16)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Create Account",
+                style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          const Text("Join our community today", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)), // Updated title
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
     );
   }
 
   Widget _buildRoleSelector() {
     return Row(
-      children: ["Order Food", "Sell Food"].map((role) {
-        bool isSelected = selectedRole == role;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => selectedRole = role),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 5),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isSelected ? AppColors.primaryOrange : const Color.fromARGB(255, 255, 254, 254), width: 1.5), // Orange border for selected
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isSelected)
-                    const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.circle, size: 8, color: Colors.black)), // Black dot for selected
-                  Text(role, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.black : Colors.black87)),
-                ],
-              ),
+      children: [
+        _buildRoleButton("Order Food", "Order Food"),
+        const SizedBox(width: 15),
+        _buildRoleButton("Sell Food", "Sell Food"),
+      ],
+    );
+  }
+
+  Widget _buildRoleButton(String label, String value) {
+    bool isSelected = selectedRole == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => selectedRole = value),
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.selectorBackground : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryOrange : const Color.fromARGB(255, 243, 241, 241),
+              width: 1.5,
             ),
           ),
-        );
-      }).toList(),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isSelected) const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.circle, size: 8, color: Colors.black),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildTermsAndConditions() {
     return RichText(
-      textAlign: TextAlign.center,
       text: TextSpan(
-        style: const TextStyle(color: Colors.black54, fontSize: 13),
+        style: const TextStyle(color: Colors.black54, fontSize: 12),
         children: [
           const TextSpan(text: "By signing up, you agree to our "),
           TextSpan(
-            text: "Terms of Service",
-            style: const TextStyle(color: AppColors.primaryOrange, fontWeight: FontWeight.bold), // Orange links
-            recognizer: TapGestureRecognizer()..onTap = () {}, // Add navigation logic here
+            text: "Terms & Conditions",
+            style: const TextStyle(color: AppColors.primaryOrange, fontWeight: FontWeight.bold),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Terms & Conditions")),
+              ),
           ),
           const TextSpan(text: " and "),
           TextSpan(
             text: "Privacy Policy",
             style: const TextStyle(color: AppColors.primaryOrange, fontWeight: FontWeight.bold),
-            recognizer: TapGestureRecognizer()..onTap = () {},
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Privacy Policy")),
+              ),
           ),
         ],
       ),
@@ -185,14 +284,25 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget _buildSubmitButton() {
     return SizedBox(
       width: double.infinity,
+      height: 55,
       child: ElevatedButton(
-        onPressed: _handleSignUp,
+        onPressed: _isLoading ? null : _handleSignUp,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryOrange, // Solid orange button
-          padding: const EdgeInsets.symmetric(vertical: 15),
+          backgroundColor: AppColors.primaryOrangeLight,
+          disabledBackgroundColor: Colors.grey.shade400,
+          elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: const Text("Create Account", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        child: _isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              )
+            : const Text(
+                "Create Account",
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
       ),
     );
   }

@@ -6,6 +6,7 @@ class AuthTextField extends StatelessWidget {
   final bool isPassword;
   final bool obscureText;
   final VoidCallback? onToggleVisibility;
+  final TextEditingController? controller;
 
   const AuthTextField({
     super.key,
@@ -13,6 +14,7 @@ class AuthTextField extends StatelessWidget {
     this.isPassword = false,
     this.obscureText = false,
     this.onToggleVisibility,
+    this.controller,
   });
 
   @override
@@ -23,6 +25,7 @@ class AuthTextField extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
+        controller: controller,
         obscureText: obscureText,
         decoration: InputDecoration(
           hintText: hint,
