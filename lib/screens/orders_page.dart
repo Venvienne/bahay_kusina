@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../models/order.dart';
 import '../providers/cart_provider.dart';
+import '../providers/orders_provider.dart';
 import 'track_order_page.dart';
 
 class OrdersPage extends StatefulWidget {
@@ -22,50 +23,18 @@ class OrdersPage extends StatefulWidget {
 
 class _OrdersPageState extends State<OrdersPage> {
   late List<Order> orders;
+  late OrdersProvider _ordersProvider;
 
   @override
   void initState() {
     super.initState();
+    _ordersProvider = OrdersProvider();
     _initializeOrders();
   }
 
   void _initializeOrders() {
-    orders = [
-      Order(
-        orderId: '#ORD-001',
-        orderDate: DateTime(2025, 11, 20, 7, 30),
-        items: [
-          OrderItem(
-            mealTitle: 'Ultimate Breakfast Package',
-            quantity: 2,
-            pricePerUnit: 150,
-          ),
-        ],
-        totalAmount: 300,
-        status: OrderStatus.outForDelivery,
-        deliveryAddress: '123 Sampaguita St., Quezon City',
-        contactNumber: '0919-345-6789',
-        paymentMethod: 'Cash on Delivery',
-        riderName: 'Mark Santos',
-        riderEta: '15 mins',
-      ),
-      Order(
-        orderId: '#ORD-002',
-        orderDate: DateTime(2025, 11, 19, 11, 0),
-        items: [
-          OrderItem(
-            mealTitle: 'Lunch Value Pack',
-            quantity: 1,
-            pricePerUnit: 350,
-          ),
-        ],
-        totalAmount: 350,
-        status: OrderStatus.delivered,
-        deliveryAddress: '456 Magsaysay Ave., Manila',
-        contactNumber: '0919-876-5432',
-        paymentMethod: 'GCash',
-      ),
-    ];
+    // Get orders from OrdersProvider
+    orders = _ordersProvider.orders;
   }
 
   @override

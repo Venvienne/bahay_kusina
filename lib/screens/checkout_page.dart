@@ -1,6 +1,8 @@
 // lib/screens/checkout_page.dart
 import 'package:flutter/material.dart';
 import '../providers/cart_provider.dart';
+import '../providers/orders_provider.dart';
+import '../models/order.dart';
 import 'order_confirmation_page.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -57,7 +59,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
 
     // Generate order ID
-    final orderId = 'ORD${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 6)}';
+    final orderId = '#ORD-${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 6)}';
+
+    // Create order items from cart
+    final orderItems = widget.cartProvider.items
+        .map((cartItem) => OrderItem(
+              mealTitle: cartItem.meal.title,
+              quantity: cartItem.quantity,
+              pricePerUnit: cartItem.meal.price,
+            ))
+        .toList();
+
+    // Create order
+    final order = Order(
+      orderId: orderId,
+      orderDate: DateTime.now(),
+      items: orderItems,
+      totalAmount: widget.cartProvider.totalPrice + 50,
+      status: OrderStatus.pending,
+      deliveryAddress: _addressController.text,
+      contactNumber: _contactController.text,
+      paymentMethod: _selectedPaymentMethod,
+      riderName: null,
+      riderEta: null,
+    );
+
+    // Add order to OrdersProvider
+    OrdersProvider().addOrder(order);
 
     Navigator.pushReplacement(
       context,
