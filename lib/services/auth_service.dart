@@ -131,6 +131,39 @@ class AuthService {
     await Future.delayed(const Duration(milliseconds: 200));
   }
 
+  /// Update user profile
+  Future<bool> updateUserProfile({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String address,
+  }) async {
+    try {
+      if (_currentUser == null) {
+        throw Exception('No user logged in');
+      }
+
+      // Simulate network delay
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Update the current user
+      _currentUser = AuthUser(
+        userId: _currentUser!.userId,
+        email: email,
+        fullName: fullName,
+        phone: phone,
+        address: address,
+        role: _currentUser!.role,
+        createdAt: _currentUser!.createdAt,
+      );
+
+      return true;
+    } catch (e) {
+      print('Update profile error: $e');
+      return false;
+    }
+  }
+
   /// Get user role as string
   String get roleName => _currentUser?.role == UserRole.vendor ? 'vendor' : 'customer';
 }

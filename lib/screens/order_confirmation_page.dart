@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../models/cart_item.dart';
 import 'home_page.dart';
+import 'track_order_page.dart';
 
 class OrderConfirmationPage extends StatelessWidget {
   final String orderId;
@@ -214,6 +215,42 @@ class OrderConfirmationPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 30),
+
+              // Track Order Button
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TrackOrderPage(
+                          orderId: orderId,
+                          riderName: 'Rider Assigned Soon',
+                          eta: estimatedDelivery,
+                          deliveryAddress: deliveryAddress,
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryOrange,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Track Order',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
 
               // Back to Home Button
               SizedBox(

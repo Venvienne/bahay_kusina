@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'meal_card.dart';
 import 'orders_page.dart';
+import 'profile_page.dart';
 import 'cart_page.dart';
 import '../models/meal_package.dart';
 import '../providers/cart_provider.dart';
@@ -385,11 +386,9 @@ class _HomePageState extends State<HomePage> {
           );
         } else if (index == 2) {
           // Navigate to Profile
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile page coming soon!'),
-              duration: Duration(seconds: 2),
-            ),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfilePage()),
           );
         }
       },
