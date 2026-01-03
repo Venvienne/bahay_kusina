@@ -1,11 +1,15 @@
 // lib/screens/track_order_page.dart
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../services/location_service.dart';
 
-class TrackOrderPage extends StatelessWidget {
+class TrackOrderPage extends StatefulWidget {
   final String orderId;
   final String riderName;
   final String eta;
   final String deliveryAddress;
+  final LatLng? riderLocation;
+  final LatLng? deliveryLocation;
 
   const TrackOrderPage({
     super.key,
@@ -13,10 +17,110 @@ class TrackOrderPage extends StatelessWidget {
     required this.riderName,
     required this.eta,
     required this.deliveryAddress,
+    this.riderLocation,
+    this.deliveryLocation,
   });
 
   static const Color primaryOrange = Color(0xFFFF6B00);
   static const Color successGreen = Color(0xFF4CAF50);
+
+  @override
+  State<TrackOrderPage> createState() => _TrackOrderPageState();
+}
+
+class _TrackOrderPageState extends State<TrackOrderPage> {
+  late GoogleMapController mapController;
+  final LocationService _locationService = LocationService();
+  late LatLng _riderLocation;
+  late LatLng _deliveryLocation;
+  final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocations();
+    _setupLocationTracking();
+  }
+
+  void _initializeLocations() {
+    // Default locations (Manila, Philippines)
+    _riderLocation = widget.riderLocation ?? const LatLng(14.5994, 120.9842);
+    _deliveryLocation = widget.deliveryLocation ?? const LatLng(14.6091, 120.9824);
+    _addMarkers();
+  }
+
+  void _addMarkers() {
+    _markers.clear();
+
+    // Rider marker
+    _markers.add(
+      Marker(
+        markerId: const MarkerId('rider'),
+        position: _riderLocation,
+        infoWindow: InfoWindow(
+          title: widget.riderName,
+          snippet: 'Delivery Rider',
+        ),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      ),
+    );
+
+    // Delivery location marker
+    _markers.add(
+      Marker(
+        markerId: const MarkerId('destination'),
+        position: _deliveryLocation,
+        infoWindow: const InfoWindow(
+          title: 'Delivery Location',
+        ),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      ),
+    );
+
+    setState(() {});
+  }
+
+  void _addPolyline() {
+    _polylines.clear();
+    _polylines.add(
+      Polyline(
+        polylineId: const PolylineId('route'),
+        color: TrackOrderPage.primaryOrange,
+        width: 5,
+        points: [_riderLocation, _deliveryLocation],
+      ),
+    );
+    setState(() {});
+  }
+
+  void _setupLocationTracking() {
+    // Simulate rider location updates
+    // In production, this would come from Firestore realtime updates
+    Future.delayed(const Duration(seconds: 2), () {
+      _addPolyline();
+    });
+  }
+
+  void _centerMapOnRider() {
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: _riderLocation,
+          zoom: 16,
+        ),
+      ),
+    );
+  }
+
+  String _getDistanceInfo() {
+    final distance = _locationService.calculateDistance(
+      _riderLocation,
+      _deliveryLocation,
+    );
+    final km = (distance / 1000).toStringAsFixed(2);
+    return '$km km away';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +134,7 @@ class TrackOrderPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Order #$orderId',
+          'Order #${widget.orderId}',
           style: const TextStyle(
             color: Colors.black,
             fontSize: 16,
@@ -39,121 +143,145 @@ class TrackOrderPage extends StatelessWidget {
         ),
         centerTitle: false,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Map Placeholder Section
-            _buildMapSection(),
-            const SizedBox(height: 20),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Order Status Timeline
-                  _buildOrderStatusSection(),
-                  const SizedBox(height: 30),
-
-                  // Delivery Info
-                  _buildDeliveryInfoSection(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMapSection() {
-    return Container(
-      width: double.infinity,
-      height: 280,
-      color: Colors.grey.shade200,
-      child: Stack(
+      body: Stack(
         children: [
-          // Placeholder Map
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.map, size: 80, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
-                  'Real-time Map Tracking\nGoogle Maps Integration',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+          // Google Map
+          GoogleMap(
+            onMapCreated: (controller) {
+              mapController = controller;
+              _centerMapOnRider();
+            },
+            initialCameraPosition: CameraPosition(
+              target: _riderLocation,
+              zoom: 16,
             ),
+            markers: _markers,
+            polylines: _polylines,
+            myLocationEnabled: false,
+            zoomControlsEnabled: true,
           ),
 
-          // Rider Info Box
+          // Rider Info Card
           Positioned(
             top: 16,
             left: 16,
+            right: 16,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                border: Border.all(color: Colors.blue.shade300),
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.schedule, color: Colors.blue.shade700, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'ETA: $eta',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: TrackOrderPage.primaryOrange,
+                        ),
+                        child: const Icon(Icons.delivery_dining,
+                            color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.riderName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _getDistanceInfo(),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: TrackOrderPage.successGreen,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'ETA: ${widget.eta}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    riderName,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade700,
-                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          // Location Pin
-          Positioned(
-            bottom: 40,
-            right: 40,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+          // Bottom Sheet with Details
+          DraggableScrollableSheet(
+            initialChildSize: 0.25,
+            minChildSize: 0.25,
+            maxChildSize: 0.6,
+            builder: (context, scrollController) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
-                ],
-              ),
-              child: const Icon(Icons.location_on, color: Colors.white),
-            ),
+                ),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Drag handle
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        _buildOrderStatusSection(),
+                        const SizedBox(height: 30),
+                        _buildDeliveryInfoSection(),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -195,7 +323,7 @@ class TrackOrderPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isCompleted || isCurrent
-                            ? primaryOrange
+                            ? TrackOrderPage.primaryOrange
                             : Colors.grey.shade300,
                       ),
                       child: Icon(
@@ -216,7 +344,7 @@ class TrackOrderPage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                        color: isCurrent ? primaryOrange : Colors.black,
+                        color: isCurrent ? TrackOrderPage.primaryOrange : Colors.black,
                       ),
                     ),
                   ],
@@ -229,7 +357,7 @@ class TrackOrderPage extends StatelessWidget {
                     child: Container(
                       width: 2,
                       height: 20,
-                      color: isCompleted ? primaryOrange : Colors.grey.shade300,
+                      color: isCompleted ? TrackOrderPage.primaryOrange : Colors.grey.shade300,
                     ),
                   ),
               ],
@@ -261,7 +389,7 @@ class TrackOrderPage extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.phone, color: primaryOrange, size: 20),
+                  Icon(Icons.phone, color: TrackOrderPage.primaryOrange, size: 20),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,7 +413,7 @@ class TrackOrderPage extends StatelessWidget {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  Icon(Icons.location_on, color: primaryOrange, size: 20),
+                  Icon(Icons.location_on, color: TrackOrderPage.primaryOrange, size: 20),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -297,7 +425,7 @@ class TrackOrderPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          deliveryAddress,
+                          widget.deliveryAddress,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
