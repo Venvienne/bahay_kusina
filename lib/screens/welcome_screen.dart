@@ -16,7 +16,7 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       body: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 23.0, vertical: 30.0),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [primaryOrange, secondaryOrange],
@@ -34,20 +34,20 @@ class WelcomeScreen extends StatelessWidget {
                 child: ClipOval(
                   child: Image.asset(
                     'assets/images/bahay_kusina_logo.png',
-                    width: 120,
-                    height: 120,
+                    width: 100,
+                    height: 100,
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 20),
 
               // ---------- TITLE & SUBTITLE ----------
               const Text(
                 "BahayKusina",
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 25,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
@@ -55,13 +55,13 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 5),
               const Text(
                 "Homemade Meals, Delivered Fresh",
-                style: TextStyle(fontSize: 16, color: Colors.white),
+                style: TextStyle(fontSize: 15, color: Colors.white),
               ),
               const SizedBox(height: 8),
               const Text(
                 "Supporting local home cooks and bringing\nauthentic Filipino cuisine to your doorstep",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(color: Colors.white70, fontSize: 11),
               ),
 
               const SizedBox(height: 30),
