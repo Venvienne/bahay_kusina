@@ -28,6 +28,7 @@ class TrackOrderPage extends StatefulWidget {
   State<TrackOrderPage> createState() => _TrackOrderPageState();
 }
 
+
 class _TrackOrderPageState extends State<TrackOrderPage> {
   late GoogleMapController mapController;
   final LocationService _locationService = LocationService();
@@ -35,20 +36,32 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
   late LatLng _deliveryLocation;
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
+  double _currentEtaMinutes = 0;
+  bool _mounted = true;
+
 
   @override
   void initState() {
     super.initState();
     _initializeLocations();
-    _setupLocationTracking();
+    _setupLiveRiderSimulation();
   }
+
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
+  }
+
 
   void _initializeLocations() {
     // Default locations (Manila, Philippines)
     _riderLocation = widget.riderLocation ?? const LatLng(14.5994, 120.9842);
     _deliveryLocation = widget.deliveryLocation ?? const LatLng(14.6091, 120.9824);
     _addMarkers();
+    _updateEta();
   }
+
 
   void _addMarkers() {
     _markers.clear();
@@ -78,7 +91,7 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
       ),
     );
 
-    setState(() {});
+    if (_mounted) setState(() {});
   }
 
   void _addPolyline() {
@@ -94,12 +107,45 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
     setState(() {});
   }
 
-  void _setupLocationTracking() {
-    // Simulate rider location updates
-    // In production, this would come from Firestore realtime updates
-    Future.delayed(const Duration(seconds: 2), () {
-      _addPolyline();
-    });
+
+  // Simulate live rider location updates (for demo)
+  void _setupLiveRiderSimulation() {
+    // Simulate the rider moving toward the delivery location every 2 seconds
+    const int steps = 20;
+    int currentStep = 0;
+    void moveRider() async {
+      if (!_mounted) return;
+      final latStep = (_deliveryLocation.latitude - _riderLocation.latitude) / steps;
+      final lngStep = (_deliveryLocation.longitude - _riderLocation.longitude) / steps;
+      if (currentStep < steps) {
+        _riderLocation = LatLng(
+          _riderLocation.latitude + latStep,
+          _riderLocation.longitude + lngStep,
+        );
+        _addMarkers();
+        _addPolyline();
+        _updateEta();
+        if (_mounted) setState(() {});
+        currentStep++;
+        Future.delayed(const Duration(seconds: 2), moveRider);
+      } else {
+        // Arrived
+        _riderLocation = _deliveryLocation;
+        _addMarkers();
+        _addPolyline();
+        _updateEta();
+        if (_mounted) setState(() {});
+      }
+    }
+    moveRider();
+  }
+
+  void _updateEta() {
+    final distance = _locationService.calculateDistance(_riderLocation, _deliveryLocation); // meters
+    // Assume average speed 30km/h (8.33 m/s)
+    final etaMinutes = distance / 500.0; // ~30km/h, 500m/min
+    _currentEtaMinutes = etaMinutes;
+    if (_mounted) setState(() {});
   }
 
   void _centerMapOnRider() {
@@ -120,6 +166,11 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
     );
     final km = (distance / 1000).toStringAsFixed(2);
     return '$km km away';
+  }
+
+  String _getEtaInfo() {
+    if (_currentEtaMinutes < 1) return 'Arriving now';
+    return '${_currentEtaMinutes.ceil()} min${_currentEtaMinutes.ceil() > 1 ? 's' : ''}';
   }
 
   @override
@@ -161,90 +212,11 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
             zoomControlsEnabled: true,
           ),
 
-          // Rider Info Card
-          Positioned(
-            top: 16,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: TrackOrderPage.primaryOrange,
-                        ),
-                        child: const Icon(Icons.delivery_dining,
-                            color: Colors.white, size: 28),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.riderName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _getDistanceInfo(),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: TrackOrderPage.successGreen,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'ETA: ${widget.eta}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Bottom Sheet with Details
+          // Draggable Bottom Sheet with Live Order Status and ETA
           DraggableScrollableSheet(
-            initialChildSize: 0.25,
-            minChildSize: 0.25,
-            maxChildSize: 0.6,
+            initialChildSize: 0.32,
+            minChildSize: 0.22,
+            maxChildSize: 0.7,
             builder: (context, scrollController) {
               return Container(
                 decoration: const BoxDecoration(
@@ -253,6 +225,13 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, -2),
+                    ),
+                  ],
                 ),
                 child: SingleChildScrollView(
                   controller: scrollController,
@@ -261,7 +240,6 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Drag handle
                         Center(
                           child: Container(
                             width: 40,
@@ -273,6 +251,59 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
                             ),
                           ),
                         ),
+                        // Live Order Location and ETA
+                        Row(
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: TrackOrderPage.primaryOrange,
+                              ),
+                              child: const Icon(Icons.delivery_dining, color: Colors.white, size: 28),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.riderName,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _getDistanceInfo(),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: TrackOrderPage.successGreen,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'ETA: ${_getEtaInfo()}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
                         _buildOrderStatusSection(),
                         const SizedBox(height: 30),
                         _buildDeliveryInfoSection(),
