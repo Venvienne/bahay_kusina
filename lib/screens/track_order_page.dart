@@ -302,67 +302,96 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
       children: [
         const Text(
           'Order Status',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
-        const SizedBox(height: 20),
-        Column(
-          children: List.generate(statuses.length, (index) {
+        const SizedBox(height: 18),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: statuses.length,
+          separatorBuilder: (context, index) => Padding(
+            padding: const EdgeInsets.only(left: 32),
+            child: Container(
+              width: 2,
+              height: 28,
+              color: statuses[index]['completed'] as bool? ?? false
+                  ? TrackOrderPage.primaryOrange
+                  : Colors.grey.shade300,
+            ),
+          ),
+          itemBuilder: (context, index) {
             final status = statuses[index];
             final isCompleted = status['completed'] as bool? ?? false;
             final isCurrent = status['current'] as bool? ?? false;
-            final isLast = index == statuses.length - 1;
 
-            return Column(
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    // Status Circle
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isCompleted || isCurrent
-                            ? TrackOrderPage.primaryOrange
-                            : Colors.grey.shade300,
-                      ),
-                      child: Icon(
-                        isCompleted ? Icons.check : Icons.circle,
-                        color: isCompleted
-                            ? Colors.white
-                            : isCurrent
-                                ? Colors.white
-                                : Colors.grey,
-                        size: isCompleted ? 24 : 20,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-
-                    // Status Title
-                    Text(
-                      status['title'] as String,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                        color: isCurrent ? TrackOrderPage.primaryOrange : Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Connecting Line
-                if (!isLast)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 23, top: 8, bottom: 8),
-                    child: Container(
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isCompleted || isCurrent
+                          ? TrackOrderPage.primaryOrange
+                          : Colors.grey.shade300,
                       width: 2,
-                      height: 20,
-                      color: isCompleted ? TrackOrderPage.primaryOrange : Colors.grey.shade300,
+                    ),
+                    color: isCompleted || isCurrent
+                        ? TrackOrderPage.primaryOrange
+                        : Colors.white,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      isCompleted
+                          ? Icons.check
+                          : isCurrent
+                              ? Icons.radio_button_checked
+                              : Icons.circle_outlined,
+                      color: isCompleted || isCurrent
+                          ? Colors.white
+                          : Colors.grey.shade400,
+                      size: isCompleted ? 20 : 18,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    status['title'] as String,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                      color: isCurrent
+                          ? TrackOrderPage.primaryOrange
+                          : isCompleted
+                              ? Colors.black
+                              : Colors.grey.shade600,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+                if (isCurrent)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: TrackOrderPage.primaryOrange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'In Progress',
+                      style: TextStyle(
+                        color: TrackOrderPage.primaryOrange,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
               ],
             );
-          }),
+          },
         ),
       ],
     );
