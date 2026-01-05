@@ -393,7 +393,6 @@ class _HomePageState extends State<HomePage> {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Orders'),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications_none_rounded), label: 'Notifications'),
         BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), label: 'Profile'),
       ],
       onTap: (index) {
@@ -405,12 +404,6 @@ class _HomePageState extends State<HomePage> {
             MaterialPageRoute(builder: (context) => const OrdersPage()),
           );
         } else if (index == 2) {
-          // Navigate to Notifications
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const NotificationsPage()),
-          );
-        } else if (index == 3) {
           // Navigate to Profile
           Navigator.push(
             context,
