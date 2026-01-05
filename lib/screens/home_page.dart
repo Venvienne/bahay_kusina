@@ -5,8 +5,10 @@ import 'meal_card.dart';
 import 'orders_page.dart';
 import 'profile_page.dart';
 import 'cart_page.dart';
+import 'notifications.dart';
 import '../models/meal_package.dart';
 import '../providers/cart_provider.dart';
+import '../services/notification_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -260,12 +262,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHeaderIcon(IconData icon, bool hasBadge) {
+    final notificationService = NotificationService();
     return Stack(
       children: [
         IconButton(
           icon: Icon(icon, color: Colors.white, size: 26),
           onPressed: () {
-            if (!hasBadge) {
+            if (hasBadge) {
+              // This is the notifications icon - open notifications
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationsPage()),
+              );
+            } else {
               // This is the shopping bag icon - open cart
               Navigator.push(
                 context,
@@ -295,20 +304,30 @@ class _HomePageState extends State<HomePage> {
             }
           },
         ),
-        if (hasBadge)
+        if (hasBadge && notificationService.unreadCount > 0)
           Positioned(
             right: 8,
             top: 8,
             child: Container(
-              width: 10,
-              height: 10,
+              width: 20,
+              height: 20,
               decoration: const BoxDecoration(
                 color: HomePage.accentRed,
                 shape: BoxShape.circle,
               ),
+              child: Center(
+                child: Text(
+                  notificationService.unreadCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
           )
-        else if (_cartProvider.itemCount > 0)
+        else if (!hasBadge && _cartProvider.itemCount > 0)
           Positioned(
             right: 8,
             top: 8,
@@ -374,6 +393,7 @@ class _HomePageState extends State<HomePage> {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Orders'),
+        BottomNavigationBarItem(icon: Icon(Icons.notifications_none_rounded), label: 'Notifications'),
         BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), label: 'Profile'),
       ],
       onTap: (index) {
@@ -385,6 +405,12 @@ class _HomePageState extends State<HomePage> {
             MaterialPageRoute(builder: (context) => const OrdersPage()),
           );
         } else if (index == 2) {
+          // Navigate to Notifications
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NotificationsPage()),
+          );
+        } else if (index == 3) {
           // Navigate to Profile
           Navigator.push(
             context,
