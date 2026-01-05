@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../widgets/signup_text_field.dart';
 import '../services/auth_service.dart';
 import 'home_page.dart';
+import 'vendor_home_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -65,10 +66,17 @@ class _SignUpPageState extends State<SignUpPage> {
       );
 
       if (success && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+        if (role == UserRole.vendor) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const VendorHomePage()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Signup failed. Please try again.')),

@@ -7,9 +7,11 @@ import '../widgets/auth_text_field.dart';
 import '../utils/validation_utils.dart';
 import '../utils/error_handler.dart';
 import '../providers/auth_provider.dart';
+import '../models/auth_user.dart';
 import 'signup_page.dart';
 import 'forgot_password_page.dart';
 import 'home_page.dart';
+import 'vendor_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   final String initialRole;
@@ -67,10 +69,17 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     if (success && mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+      if (authProvider.currentUser?.role == UserRole.vendor) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const VendorHomePage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
     } else if (mounted && authProvider.errorMessage != null) {
       ErrorHandler.showErrorSnackBar(context, authProvider.errorMessage!);
     }
