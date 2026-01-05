@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../services/location_service.dart';
+import '../services/notification_service.dart';
 
 class TrackOrderPage extends StatefulWidget {
   final String orderId;
@@ -10,6 +11,7 @@ class TrackOrderPage extends StatefulWidget {
   final String deliveryAddress;
   final LatLng? riderLocation;
   final LatLng? deliveryLocation;
+  final String? riderPhoneNumber;
 
   const TrackOrderPage({
     super.key,
@@ -19,6 +21,7 @@ class TrackOrderPage extends StatefulWidget {
     required this.deliveryAddress,
     this.riderLocation,
     this.deliveryLocation,
+    this.riderPhoneNumber,
   });
 
   static const Color primaryOrange = Color(0xFFFF6B00);
@@ -32,12 +35,12 @@ class TrackOrderPage extends StatefulWidget {
 class _TrackOrderPageState extends State<TrackOrderPage> {
   late GoogleMapController mapController;
   final LocationService _locationService = LocationService();
+  final NotificationService _notificationService = NotificationService();
   late LatLng _riderLocation;
   late LatLng _deliveryLocation;
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
   double _currentEtaMinutes = 0;
-  bool _mounted = true;
 
 
   @override
@@ -49,7 +52,6 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
 
   @override
   void dispose() {
-    _mounted = false;
     super.dispose();
   }
 
@@ -90,8 +92,6 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       ),
     );
-
-    if (_mounted) setState(() {});
   }
 
   void _addPolyline() {
@@ -104,7 +104,6 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
         points: [_riderLocation, _deliveryLocation],
       ),
     );
-    setState(() {});
   }
 
 
@@ -114,7 +113,7 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
     const int steps = 20;
     int currentStep = 0;
     void moveRider() async {
-      if (!_mounted) return;
+      if (!mounted) return;
       final latStep = (_deliveryLocation.latitude - _riderLocation.latitude) / steps;
       final lngStep = (_deliveryLocation.longitude - _riderLocation.longitude) / steps;
       if (currentStep < steps) {
@@ -125,7 +124,7 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
         _addMarkers();
         _addPolyline();
         _updateEta();
-        if (_mounted) setState(() {});
+        if (mounted) setState(() {});
         currentStep++;
         Future.delayed(const Duration(seconds: 2), moveRider);
       } else {
@@ -134,7 +133,11 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
         _addMarkers();
         _addPolyline();
         _updateEta();
-        if (_mounted) setState(() {});
+        if (mounted) setState(() {});
+        _notificationService.showNotification(
+          'Order Arrived',
+          'Your order #${widget.orderId} has arrived.',
+        );
       }
     }
     moveRider();
@@ -145,7 +148,6 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
     // Assume average speed 30km/h (8.33 m/s)
     final etaMinutes = distance / 500.0; // ~30km/h, 500m/min
     _currentEtaMinutes = etaMinutes;
-    if (_mounted) setState(() {});
   }
 
   void _centerMapOnRider() {
@@ -321,11 +323,11 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
 
   Widget _buildOrderStatusSection() {
     final statuses = [
-      {'title': 'Order Placed', 'completed': true},
-      {'title': 'Confirmed', 'completed': true},
-      {'title': 'Preparing', 'completed': true},
-      {'title': 'Out for Delivery', 'completed': true, 'current': true},
-      {'title': 'Delivered', 'completed': false},
+      _OrderStatus(title: 'Order Placed', completed: true),
+      _OrderStatus(title: 'Confirmed', completed: true),
+      _OrderStatus(title: 'Preparing', completed: true),
+      _OrderStatus(title: 'Out for Delivery', completed: true, current: true),
+      _OrderStatus(title: 'Delivered'),
     ];
 
     return Column(
@@ -345,15 +347,15 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
             child: Container(
               width: 2,
               height: 28,
-              color: statuses[index]['completed'] as bool? ?? false
+              color: statuses[index].completed
                   ? TrackOrderPage.primaryOrange
                   : Colors.grey.shade300,
             ),
           ),
           itemBuilder: (context, index) {
             final status = statuses[index];
-            final isCompleted = status['completed'] as bool? ?? false;
-            final isCurrent = status['current'] as bool? ?? false;
+            final isCompleted = status.completed;
+            final isCurrent = status.current;
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -390,7 +392,7 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    status['title'] as String,
+                    status.title,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
@@ -459,9 +461,9 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        '0920-456-7890',
-                        style: TextStyle(
+                      Text(
+                        widget.riderPhoneNumber ?? 'N/A',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
@@ -505,4 +507,12 @@ class _TrackOrderPageState extends State<TrackOrderPage> {
       ],
     );
   }
+}
+
+class _OrderStatus {
+  final String title;
+  final bool completed;
+  final bool current;
+
+  _OrderStatus({required this.title, this.completed = false, this.current = false});
 }

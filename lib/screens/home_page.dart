@@ -47,7 +47,7 @@ class _HomePageState extends State<HomePage> {
       'desc': 'Perfect afternoon snacks for the family',
       'price': 180,
       'left': 8,
-      'image': 'assets/images/Food1.jpg',
+      'image': 'assets/images/food_package_1.jpg',
     },
     {
       'type': 'Dinner',
@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
       'desc': 'A satisfying meal for four, ready to serve',
       'price': 499,
       'left': 12,
-      'image': 'assets/images/Food1.jpg',
+      'image': 'assets/images/food_package_2.jpg',
     },
   ];
 
@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(110.0),
+                  preferredSize: const Size.fromHeight(135.0),
                   child: Column(
                     children: [
                       Padding(
