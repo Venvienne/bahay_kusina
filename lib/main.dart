@@ -12,6 +12,11 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize auth provider and check auth status
+  final authProvider = AuthProvider();
+  await authProvider.checkAuthStatus();
+
   runApp(const BahayKusinaApp());
 }
 

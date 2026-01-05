@@ -146,12 +146,16 @@ class FirestoreService {
     required String userId,
     required String email,
     required String displayName,
+    required String phone,
+    required String address,
     required String role,
   }) async {
     try {
       await _db.collection('users').doc(userId).set({
         'email': email,
         'displayName': displayName,
+        'phone': phone,
+        'address': address,
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),

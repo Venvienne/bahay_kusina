@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/auth_user.dart';
 import '../utils/error_handler.dart';
 import '../utils/logger.dart';
+import '../services/firestore_service.dart';
 
 /// Provider for managing authentication state
 class AuthProvider extends ChangeNotifier {
@@ -40,13 +41,16 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (userCredential.user != null) {
+        // Fetch user profile from Firestore
+        final userProfile = await FirestoreService().getUserProfile(userCredential.user!.uid);
+
         _currentUser = AuthUser(
           userId: userCredential.user!.uid,
           email: userCredential.user!.email ?? '',
           fullName: userCredential.user!.displayName ?? email.split('@')[0],
-          phone: userCredential.user!.phoneNumber ?? '',
-          address: '', // 
-          role: UserRole.customer,
+          phone: userProfile?['phone'] ?? userCredential.user!.phoneNumber ?? '',
+          address: userProfile?['address'] ?? '',
+          role: userProfile?['role'] == 'vendor' ? UserRole.vendor : UserRole.customer,
           createdAt: userCredential.user!.metadata.creationTime ?? DateTime.now(),
         );
         _isLoading = false;
@@ -87,9 +91,16 @@ class AuthProvider extends ChangeNotifier {
       if (userCredential.user != null) {
         // Update display name
         await userCredential.user!.updateDisplayName(fullName);
-        
-        // 
-        // firestore_service.createUser(userCredential.user!.uid, {...})
+
+        // Create user profile in Firestore
+        await FirestoreService().createUserProfile(
+          userId: userCredential.user!.uid,
+          email: email,
+          displayName: fullName,
+          phone: phone,
+          address: address,
+          role: role.toString().split('.').last,
+        );
 
         _currentUser = AuthUser(
           userId: userCredential.user!.uid,
@@ -202,15 +213,18 @@ class AuthProvider extends ChangeNotifier {
   /// Check authentication status
   Future<void> checkAuthStatus() async {
     try {
-      _firebaseAuth.authStateChanges().listen((firebase_auth.User? user) {
+      _firebaseAuth.authStateChanges().listen((firebase_auth.User? user) async {
         if (user != null) {
+          // Fetch user profile from Firestore
+          final userProfile = await FirestoreService().getUserProfile(user.uid);
+
           _currentUser = AuthUser(
             userId: user.uid,
             email: user.email ?? '',
             fullName: user.displayName ?? 'User',
-            phone: user.phoneNumber ?? '',
-            address: '',
-            role: UserRole.customer,
+            phone: userProfile?['phone'] ?? user.phoneNumber ?? '',
+            address: userProfile?['address'] ?? '',
+            role: userProfile?['role'] == 'vendor' ? UserRole.vendor : UserRole.customer,
             createdAt: user.metadata.creationTime ?? DateTime.now(),
           );
         } else {
