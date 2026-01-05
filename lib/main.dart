@@ -5,6 +5,7 @@ import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'screens/welcome_screen.dart';
 import 'providers/auth_provider.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,7 @@ class BahayKusinaApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationService()),
       ],
       child: MaterialApp(
         title: 'BahayKusina',

@@ -21,7 +21,7 @@ class NotificationModel {
   });
 }
 
-class NotificationService {
+class NotificationService extends ChangeNotifier {
   // Singleton pattern
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() {
@@ -39,6 +39,7 @@ class NotificationService {
     _notifications.insert(0, notification);
     // In a real app, you would also persist this notification
     AppLogger.info('Notification added: ${notification.title}');
+    notifyListeners();
   }
 
   void markAllAsRead() {
@@ -46,6 +47,7 @@ class NotificationService {
       notification.isRead = true;
     }
     AppLogger.info('All notifications marked as read.');
+    notifyListeners();
   }
 
   // This is a placeholder for a real notification showing mechanism.
