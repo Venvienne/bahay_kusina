@@ -1,7 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AddPackagePage extends StatefulWidget {
-  const AddPackagePage({super.key});
+  const AddPackagePage({
+    super.key,
+    this.initialTitle,
+    this.initialCategory,
+    this.initialPrice,
+    this.initialStock,
+    this.initialDesc,
+  });
+
+  final String? initialTitle;
+  final String? initialCategory;
+  final String? initialPrice;
+  final String? initialStock;
+  final String? initialDesc;
 
   @override
   State<AddPackagePage> createState() => _AddPackagePageState();
@@ -9,13 +24,17 @@ class AddPackagePage extends StatefulWidget {
 
 class _AddPackagePageState extends State<AddPackagePage> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Form Controllers
-  final _titleController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _stockController = TextEditingController();
-  final _descController = TextEditingController();
-  String _selectedCategory = 'Breakfast';
+  late final _titleController = TextEditingController(text: widget.initialTitle);
+  late final _priceController = TextEditingController(text: widget.initialPrice);
+  late final _stockController = TextEditingController(text: widget.initialStock);
+  late final _descController = TextEditingController(text: widget.initialDesc);
+  late String _selectedCategory = widget.initialCategory ?? 'Breakfast';
+
+  // Image picker
+  final ImagePicker _picker = ImagePicker();
+  XFile? _selectedImage;
 
   static const Color primaryOrange = Color(0xFFFF6B00);
 
@@ -134,21 +153,34 @@ class _AddPackagePageState extends State<AddPackagePage> {
   // --- Helper Widgets ---
 
   Widget _buildImagePicker() {
-    return Container(
-      height: 180,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.grey.shade400),
-          const SizedBox(height: 10),
-          Text("Upload Package Photo", style: TextStyle(color: Colors.grey.shade600)),
-        ],
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        height: 180,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+        ),
+        child: _selectedImage != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: Image.file(
+                  File(_selectedImage!.path),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.grey.shade400),
+                  const SizedBox(height: 10),
+                  Text("Upload Package Photo", style: TextStyle(color: Colors.grey.shade600)),
+                ],
+              ),
       ),
     );
   }
@@ -170,6 +202,15 @@ class _AddPackagePageState extends State<AddPackagePage> {
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: primaryOrange)),
     );
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _selectedImage = image;
+      });
+    }
   }
 
   void _saveForm() {

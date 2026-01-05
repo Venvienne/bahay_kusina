@@ -165,13 +165,16 @@ class _VendorPackageCard extends StatelessWidget {
                 const SizedBox(height: 15),
                 Row(
                   children: [
-                    Expanded(child: _actionBtn(Icons.edit_outlined, "Edit")),
-                    const SizedBox(width: 10),
+                    Expanded(child: _actionBtn(Icons.edit_outlined, "Edit", onPressed: () => _editPackage(context))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _actionBtn(Icons.copy_outlined, "Duplicate", onPressed: () => _duplicatePackage(context))),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: _actionBtn(
                         Icons.delete_outline,
                         "Delete",
                         isDelete: true,
+                        onPressed: () => _deletePackage(context),
                       ),
                     ),
                   ],
@@ -203,9 +206,9 @@ class _VendorPackageCard extends StatelessWidget {
     );
   }
 
-  Widget _actionBtn(IconData icon, String label, {bool isDelete = false}) {
+  Widget _actionBtn(IconData icon, String label, {bool isDelete = false, VoidCallback? onPressed}) {
     return OutlinedButton.icon(
-      onPressed: () {},
+      onPressed: onPressed ?? () {},
       icon: Icon(icon, size: 16, color: isDelete ? Colors.red : Colors.black87),
       label: Text(
         label,
@@ -213,6 +216,55 @@ class _VendorPackageCard extends StatelessWidget {
       ),
       style: OutlinedButton.styleFrom(
         side: BorderSide(color: Colors.grey.shade300),
+      ),
+    );
+  }
+
+  void _editPackage(BuildContext context) {
+    // Navigate to edit page (for now, just show a snackbar)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Edit $title")),
+    );
+  }
+
+  void _duplicatePackage(BuildContext context) {
+    // Navigate to add page with pre-filled data
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddPackagePage(
+          initialTitle: "$title (Copy)",
+          initialCategory: category,
+          initialPrice: price.toString(),
+          initialStock: stock.toString(),
+          initialDesc: "Copy of $title",
+        ),
+      ),
+    );
+  }
+
+  void _deletePackage(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Package"),
+        content: Text("Are you sure you want to delete '$title'?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              // Delete logic here
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("$title deleted")),
+              );
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

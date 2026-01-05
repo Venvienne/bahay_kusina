@@ -98,18 +98,23 @@ class _OrderCard extends StatelessWidget {
               const Icon(Icons.access_time, size: 14, color: Colors.grey),
               const SizedBox(width: 4),
               Text(time, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const Spacer(),
-              _actionButton(status == "Pending" ? "Accept Order" : "Mark Ready", 
-                  status == "Pending" ? const Color(0xFFFF6B00) : Colors.green),
             ],
           ),
+          const SizedBox(height: 12),
+          _buildTrackingActions(context),
         ],
       ),
     );
   }
 
   Widget _buildStatusBadge(String status) {
-    Color color = status == "Pending" ? Colors.orange : Colors.blue;
+    Color color;
+    if (status == "Pending") color = Colors.orange;
+    else if (status == "Preparing") color = Colors.blue;
+    else if (status == "Ready") color = Colors.green;
+    else if (status == "Delivered") color = Colors.purple;
+    else color = Colors.grey;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
@@ -129,5 +134,48 @@ class _OrderCard extends StatelessWidget {
       ),
       child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
     );
+  }
+
+  Widget _buildTrackingActions(BuildContext context) {
+    if (status == "Pending") {
+      return Row(
+        children: [
+          Expanded(
+            child: _actionButton("Accept Order", const Color(0xFFFF6B00)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red),
+                foregroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text("Decline", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      );
+    } else if (status == "Preparing") {
+      return Row(
+        children: [
+          Expanded(
+            child: _actionButton("Mark Ready", Colors.green),
+          ),
+        ],
+      );
+    } else if (status == "Ready") {
+      return Row(
+        children: [
+          Expanded(
+            child: _actionButton("Mark Delivered", Colors.purple),
+          ),
+        ],
+      );
+    } else {
+      return const SizedBox.shrink();
+    }
   }
 }
