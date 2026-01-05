@@ -1,51 +1,35 @@
-// lib/utils/logger.dart
+import 'package:logger/logger.dart';
 
-import 'package:flutter/foundation.dart';
-
-/// Simple logging utility for the app
-/// Only logs in debug mode, suppressed in release builds
+/// Custom logger for the app
 class AppLogger {
-  static const String _prefix = '[BahayKusina]';
+  static final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 2,
+      errorMethodCount: 8,
+      lineLength: 120,
+      colors: true,
+      printEmojis: true,
+      printTime: false,
+    ),
+  );
 
-  static void info(String message, [dynamic error, StackTrace? stackTrace]) {
-    if (kDebugMode) {
-      debugPrint('$_prefix [INFO] $message');
-      if (error != null) {
-        debugPrint('Error: $error');
-      }
-      if (stackTrace != null) {
-        debugPrintStack(stackTrace: stackTrace);
-      }
-    }
+  static void debug(String message) {
+    _logger.d(message);
   }
 
-  static void warning(String message, [dynamic error, StackTrace? stackTrace]) {
-    if (kDebugMode) {
-      debugPrint('$_prefix [WARN] $message');
-      if (error != null) {
-        debugPrint('Error: $error');
-      }
-      if (stackTrace != null) {
-        debugPrintStack(stackTrace: stackTrace);
-      }
-    }
+  static void info(String message) {
+    _logger.i(message);
+  }
+
+  static void warning(String message) {
+    _logger.w(message);
   }
 
   static void error(String message, [dynamic error, StackTrace? stackTrace]) {
-    if (kDebugMode) {
-      debugPrint('$_prefix [ERROR] $message');
-      if (error != null) {
-        debugPrint('Error: $error');
-      }
-      if (stackTrace != null) {
-        debugPrintStack(stackTrace: stackTrace);
-      }
-    }
+    _logger.e(message, error: error, stackTrace: stackTrace);
   }
 
-  static void debug(String message) {
-    if (kDebugMode) {
-      debugPrint('$_prefix [DEBUG] $message');
-    }
+  static void verbose(String message) {
+    _logger.v(message);
   }
 }
