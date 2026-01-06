@@ -13,21 +13,22 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize auth provider and check auth status
+  // Initialize auth provider (checkAuthStatus is called in constructor)
   final authProvider = AuthProvider();
-  await authProvider.checkAuthStatus();
 
-  runApp(const BahayKusinaApp());
+  runApp(BahayKusinaApp(authProvider: authProvider));
 }
 
 class BahayKusinaApp extends StatelessWidget {
-  const BahayKusinaApp({super.key});
+  final AuthProvider authProvider;
+
+  const BahayKusinaApp({super.key, required this.authProvider});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => NotificationService()),
       ],
       child: MaterialApp(

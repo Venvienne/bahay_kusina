@@ -8,11 +8,15 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bahaykusina/main.dart';
+import 'package:bahaykusina/providers/auth_provider.dart';
 
 void main() {
   testWidgets('App starts with WelcomeScreen', (WidgetTester tester) async {
+    // Create an AuthProvider instance
+    final authProvider = AuthProvider();
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const BahayKusinaApp());
+    await tester.pumpWidget(BahayKusinaApp(authProvider: authProvider));
 
     // Verify that the WelcomeScreen is shown.
     expect(find.text('BahayKusina'), findsOneWidget);
